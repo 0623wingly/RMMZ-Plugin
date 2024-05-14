@@ -14,7 +14,7 @@
  * @plugindesc 【wingly-Icoration】 [Tire X] [Ver,1.0.0] ["プラグイン名"] 
  * @author ﾜｲ式会社wingly Chat-GPT
  * @target MZ
- * @url https://raw.githubusercontent.com/0623wingly/RMMZ-Plugin/main/
+ * @url https://raw.githubusercontent.com/0623wingly/RMMZ-Plugin/main/"プラグイン名".js
  *
  * @help
  *
