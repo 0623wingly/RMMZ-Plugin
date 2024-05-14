@@ -1,5 +1,5 @@
 //=============================================================================
-// winglyPlugforBase.js
+// winglyPlugfor.js
 //----------------------------------------------------------------------------
 // © 2020-2024 wingly-Icoration. All Right Reserved.
 // This software is released under the MIT License.
@@ -8,10 +8,10 @@
 // https://openai.com/chatgpt
 //----------------------------------------------------------------------------
 // [Version History]～更新履歴～
-// 1.0.0 // 初版
+// 0.0.0 // 初版
 //=============================================================================*/
 /*:
- * @plugindesc 【wingly-Icoration】 [Tire 0] [Ver,1.0.0] [winglyPlugforBase] 
+ * @plugindesc 【wingly-Icoration】 [Tire 0] [Ver,0.0.0] [winglyPlugfor] 
  * @author ﾜｲ式会社wingly Chat-GPT
  * @target MZ
  * @url 
@@ -51,7 +51,7 @@
  * #############################################################################
  * [Version History]～更新履歴～
  * #############################################################################
- * 1.0.0 // 初版リリース
+ * 0.0.0 // 初版リリース
  * -----------------------------------------------------------------------------
  *　
  */
@@ -59,7 +59,7 @@
 (() => {
   "use strict";
 	
-	const pluginName = 'winglyPlugforBase';
+	const pluginName = 'winglyPlugfor';
     const pluginParams = PluginManager.parameters(pluginName);
 	
 //=============================================================================
