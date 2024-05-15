@@ -2,7 +2,7 @@
 僕の作成したRPGツクールMZ用のプラグイン集です。
 
 # 作成プラグイン一覧
-・00 「winglyPlugforBase」[Ver,0.0.0] 初版リリース<br>
+・00 「winglyPlugfor」[Ver,0.0.0] 初版リリース<br>
 ・01 「」
 
 # 注意事項
