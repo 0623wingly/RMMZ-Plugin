@@ -2,8 +2,8 @@
 僕の作成したRPGツクールMZ用のプラグイン集です。
 
 # 作成プラグイン一覧
-・00 「winglyPlugfor」[Ver,0.0.0] 初版リリース<br>
-・01 「IndividualSceneBGM」[Ver,1.0.0] 2024/05/15 初版リリース<br>
+・00 【Tire 0】「winglyPlugfor」[Ver,0.0.0] 初版リリース<br>
+・01 【Tire 4】「IndividualSceneBGM」[Ver,1.0.0] 2024/05/15 初版リリース<br>
 
 # 注意事項
 これらのプラグインは主にChat-GPT君の力を借りて作成されたプラグインであり、私自身には全くJavaScriptの知識はありません。<br>
