@@ -9,9 +9,10 @@
 //----------------------------------------------------------------------------
 // [Version History]～更新履歴～
 // 1.0.0 2024/05/15 初版
+// 1.1.0 2024/05/16 アドオンプラグイン「IndividualSceneBGM+.js」に対応
 //=============================================================================*/
 /*:
- * @plugindesc 【wingly-Icoration】 [Tire 4] [Ver,1.0.0] [IndividualSceneBGM] 
+ * @plugindesc 【wingly-Icoration】 [Tire 4] [Ver,1.1.0] [IndividualSceneBGM] 
  * @author ﾜｲ式会社wingly Chat-GPT
  * @target MZ
  * @url https://raw.githubusercontent.com/0623wingly/RMMZ-Plugin/main/IndividualSceneBGM.js
@@ -30,7 +31,7 @@
  * ============================================================================
  *                                  機能
  * ============================================================================
- *　以下の１１個のシーンに、専用のBGMを複数設定することが出来ます。
+ * 以下の１１個のシーンに、専用のBGMを複数設定することが出来ます。
  * ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
  * ・「Scene_Menu」メニュー画面  
  * ・「Scene_Item」アイテム画面
@@ -43,6 +44,12 @@
  * ・「Scene_gameEnd」ゲーム終了画面  
  * ・「Scene_shop」ショップ画面 
  * ・「Scene_name」名前入力画面  
+ * ----------------------------------------------------------------------------
+ * さらに、アドオンプラグイン「IndividualSceneBGM+.js」で
+ * 以下の２個のシーンにも、追加で専用のBGMを複数設定することが出来ます。
+ * ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
+ * ・「Scene_CreditsPage」クレジット画面  ※VisuMZ_4_CreditsPage
+ * ・「Scene_PatchNotes」パッチノート画面　※VisuMZ_4_PatchNotes
  * ----------------------------------------------------------------------------
  * バインドされた変数の値に応じてBGMは動的に変化します。 
  * バインドされていない場合はリストの一番上,１番目に設定されたBGMが再生されます。
@@ -99,6 +106,7 @@
  * [Version History]～更新履歴～
  * ############################################################################
  * 1.0.0 2024/05/15 初版リリース
+ * 1.1.0 2024/05/15 アドオンプラグイン「IndividualSceneBGM+.js」に対応
  * ----------------------------------------------------------------------------
  *　
  * @param menuBGMSettings
@@ -144,6 +152,7 @@
  * @param nameBGMSettings
  * @text Scene_Name再生BGM
  * @type struct<SceneBGMSettings>
+ *
  */
 
 /*~struct~BGMSetting:
@@ -197,41 +206,43 @@
 
     const pluginName = 'IndividualSceneBGM';
     const parameters = PluginManager.parameters(pluginName);
-    
-    let previousBgm = null; // 以前のBGM情報を保存する変数。
-    
+    const plusParameters = PluginManager.parameters('IndividualSceneBGM+'); // アドオンプラグインのパラメータを取得
+
+    let previousBgm = null; // 以前のBGM情報を保存する変数
+
+//=============================================================================
+//	JSON形式の文字列をオブジェクトに変換
+//=============================================================================   
     const setupSceneBGM = (scene, settings) => {
         if (!settings) return;
-        const bgmSettings = JSON.parse(settings);
-        const bgmList = JSON.parse(bgmSettings.bgmList || '[]').map(bgm => JSON.parse(bgm));
-        const variableId = parseInt(bgmSettings.variableId, 10) || 0;
 
+        const bgmSettings = JSON.parse(settings);
+        const bgmList = JSON.parse(bgmSettings.bgmList).map(bgm => JSON.parse(bgm));
+        const variableId = parseInt(bgmSettings.variableId, 10) || 0;
+//=============================================================================
+//	BGMを再生します。
+//=============================================================================
+        const playBGM = (bgmList, variableId) => {
+            previousBgm = AudioManager.saveBgm();
+            const index = $gameVariables.value(variableId) || 0;
+            if (index >= 0 && index < bgmList.length) {
+                const bgm = bgmList[index];
+                AudioManager.playBgm({
+                    name: bgm.fileName,
+                    volume: bgm.volume,
+                    pitch: bgm.pitch,
+                    pan: bgm.pan
+                });
+            }
+        };
 //=============================================================================
 //	各シーンごとに再生されるBGMを設定します。
 //=============================================================================
-    const playBGM = (bgmList, variableId) => {
-        previousBgm = AudioManager.saveBgm();  // 現在のBGM情報を保存
-        const index = $gameVariables.value(variableId) || 0;
-        if (index >= 0 && index < bgmList.length) {
-            const bgm = bgmList[index];
-            AudioManager.playBgm({
-                name: bgm.fileName,
-                volume: bgm.volume,
-                pitch: bgm.pitch,
-                pan: bgm.pan
-            });
-        }
-    };
-        
-//=============================================================================
-//	そのシーンに遷移した時に設定されたBGMを再生します。
-//=============================================================================        
         const _create = scene.prototype.create;
         scene.prototype.create = function() {
             _create.call(this);
             playBGM(bgmList, variableId);
         };
-
 //=============================================================================
 //	そのシーンを終了した際に保存された遷移前のBGMを再生します。
 //=============================================================================
@@ -247,6 +258,20 @@
             resumePreviousBGM();
         };
     };
+
+//=============================================================================
+//	アドオンプラグインによって追加される各シーンごとに再生されるBGMを適用します。
+//=============================================================================  
+    const parseAndSetupSceneBGM = (scene, parameterName) => {
+        const paramString = plusParameters[parameterName];
+        if (paramString) {
+            setupSceneBGM(scene, paramString);
+        }
+    };
+
+    // アドオンプラグインのシーン設定を適用
+    parseAndSetupSceneBGM(Scene_CreditsPage, 'creditsPageBGMSettings');
+    parseAndSetupSceneBGM(Scene_PatchNotes, 'patchNotesBGMSettings');
 
 //=============================================================================
 //	各シーンごとに再生されるBGMを適用します。
