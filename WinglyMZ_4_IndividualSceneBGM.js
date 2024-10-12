@@ -10,6 +10,7 @@
 // [Version History]～更新履歴～
 // α0.0.0 メニュー画面BGMの再生機能定義
 // α0.1.0 メニュー画面BGMの再生位置保持機能定義
+// α0.1.1 プラグインコマンドでメニュー画面BGM保持設定を変更できるよう定義
 //=============================================================================*/
 /*:
  * @plugindesc 【wingly-Icoration】 [Tire 4] [Ver,α0.1.0] [IndividualSceneBGM] 
@@ -98,7 +99,7 @@
 
     const pluginName = 'WinglyMZ_4_IndividualSceneBGM';
     const parameters = PluginManager.parameters(pluginName);
-    const isMenuBGMkeep = parameters['isMenuBGMkeep'] === 'true';
+    let MenuBGMkeep = parameters['isMenuBGMkeep'] === 'true';
 
     let previousBgm = null;  // 非対応シーン用のBGM保存スロット（Aスロ）
     let menuBgm = null;  // メニュー専用のBGM保存スロット（Bスロ）
@@ -112,7 +113,7 @@
         }
 
         static playMenuBGM() { //メニュー画面BGMを再生するスタティックメソッド
-            if (isMenuBGMkeep && menuBgm) { // 再生位置保持がONで、BスロにBGMが存在する場合は
+            if (MenuBGMkeep && menuBgm) { // 再生位置保持がONで、BスロにBGMが存在する場合は
                 this.saveBGM();  // Aスロに保存
                 AudioManager.replayBgm(menuBgm); //Bスロレジューム
                 playedBSceneBGM = true;  // メニュー画面BGMを再生したことを示す
@@ -145,7 +146,7 @@
         }
 
         static leaveMenuScene() { // メニューシーンを離脱する時のスタティックメソッド
-            if (isMenuBGMkeep && playedBSceneBGM) { // 再生位置保持がONでメニュー画面BGMが再生されている場合
+            if (MenuBGMkeep && playedBSceneBGM) { // 再生位置保持がONでメニュー画面BGMが再生されている場合
                 menuBgm = AudioManager.saveBgm(); // Bスロに保存
             }
             AudioManager.replayBgm(previousBgm);  // 非対応シーン用のBGMを復元
@@ -169,9 +170,12 @@
 
     // メニュー画面BGMの設定変更
     PluginManager.registerCommand(pluginName, "MenuBGMkeepOption", args => {
-        const keepOption = args.isMenuBGMkeep === "true";
-        parameters['isMenuBGMkeep'] = keepOption ? 'true' : 'false';
-        console.log(`Menu BGM keep option set to: ${parameters['isMenuBGMkeep']}`);
+        MenuBGMkeep = (args.isMenuBGMkeep === "true");
+        console.log(MenuBGMkeep);
+
+        if (!MenuBGMkeep) { // falseにしたら、Bスロを空にする
+            menuBgm = null;
+        }
     });
 
 })();
