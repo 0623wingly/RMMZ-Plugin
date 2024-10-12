@@ -11,9 +11,10 @@
 // α0.0.0 メニュー画面BGMの再生機能定義
 // α0.1.0 メニュー画面BGMの再生位置保持機能定義
 // α0.1.1 プラグインコマンドでメニュー画面BGM保持設定を変更できるよう定義
+// α0.1.2 メニュー画面BGMの変数が変わった際に、以前のメニュー画面BGMを再生しないよう定義
 //=============================================================================*/
 /*:
- * @plugindesc 【wingly-Icoration】 [Tire 4] [Ver,α0.1.0] [IndividualSceneBGM] 
+ * @plugindesc 【wingly-Icoration】 [Tire 4] [Ver,α0.1.2] [IndividualSceneBGM] 
  * @author ﾜｲ式会社wingly Chat-GPT
  * @target MZ
  * @url https://raw.githubusercontent.com/0623wingly/RMMZ-Plugin/Tire4/WinglyMZ_4_IndividualSceneBGM.js
@@ -105,6 +106,8 @@
     let menuBgm = null;  // メニュー専用のBGM保存スロット（Bスロ）
 
     let playedBSceneBGM = false; // メニュー画面BGMを再生したかを判別
+    let preMenuIndex = null;  // 以前に再生されたメニュー画面BGMのインデックス
+
 
 
     class MenuSceneBGM { //メニューシーンのBGM再生に関するクラス
@@ -112,21 +115,24 @@
             previousBgm = AudioManager.saveBgm(); // 現在再生中のBGMをAスロに保存
         }
 
+        static setupMenuSceneBGM () { //パラメーターからメニュー画面BGMの設定を読み込み
+            const menubgmSettings = JSON.parse(parameters['menuBGMSettings']);
+            const menuvariableId = parseInt(menubgmSettings.variableId, 10) || 0;
+            const menubgmList = JSON.parse(menubgmSettings.bgmList).map(bgm => JSON.parse(bgm));
+            const menuIndex = $gameVariables.value(menuvariableId); // 変数の値をインデックスに代入
+
+            return { bgmList: menubgmList, menuIndex: menuIndex }; //BGM再生のための値を返す
+        }
+
         static playMenuBGM() { //メニュー画面BGMを再生するスタティックメソッド
-            if (MenuBGMkeep && menuBgm) { // 再生位置保持がONで、BスロにBGMが存在する場合は
+            const { bgmList, menuIndex } = this.setupMenuSceneBGM();  // bgmList と menuIndex を取得
+            if (MenuBGMkeep && menuBgm && preMenuIndex === menuIndex) { // 再生位置保持がONで、BスロにBGMが存在し、Bスロに保存したメニュー画面BGMのインデックスとこれから再生予定のメニュー画面BGMのインデックスが一致する場合は
                 this.saveBGM();  // Aスロに保存
                 AudioManager.replayBgm(menuBgm); //Bスロレジューム
                 playedBSceneBGM = true;  // メニュー画面BGMを再生したことを示す
                 return; // これ以上処理をしない
-            } else { //Bスロをレジュームしない場合、パラメーターからメニュー画面BGMの設定を読み込み
-                const bgmSettings = JSON.parse(parameters['menuBGMSettings']);
-                const variableId = parseInt(bgmSettings.variableId, 10) || 0;
-                const bgmList = JSON.parse(bgmSettings.bgmList).map(bgm => JSON.parse(bgm));
-
-                const index = $gameVariables.value(variableId); // 変数の値をインデックスに代入
-
-                if (index >= 0 && index < bgmList.length) { // BGMが存在する場合、現在の変数の値のインデックスのBGMを再生
-                    const bgm = bgmList[index];
+            } else if (menuIndex >= 0 && menuIndex < bgmList.length) { // BGMが存在する場合、現在の変数の値のインデックスのBGMを再生
+                    const bgm = bgmList[menuIndex];
                     if (bgm && bgm.fileName) {
                         this.saveBGM();  // Aスロに保存
                         AudioManager.playBgm({
@@ -136,13 +142,13 @@
                             pan: parseInt(bgm.pan, 10)
                         });
                         playedBSceneBGM = true;  // メニュー画面BGMを再生したことを示す
+                        preMenuIndex = menuIndex;
                     } else {
                         playedBSceneBGM = false;  // メニュー画面BGMを再生していないことを示す
                     }
                 } else {
                     playedBSceneBGM = false;  // メニュー画面BGMを再生していないことを示す
                 }
-            }
         }
 
         static leaveMenuScene() { // メニューシーンを離脱する時のスタティックメソッド
@@ -175,6 +181,7 @@
 
         if (!MenuBGMkeep) { // falseにしたら、Bスロを空にする
             menuBgm = null;
+            preMenuIndex = null;
         }
     });
 
