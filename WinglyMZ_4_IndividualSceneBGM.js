@@ -12,6 +12,7 @@
 // α0.1.0 メニュー画面BGMの再生位置保持機能定義
 // α0.1.1 プラグインコマンドでメニュー画面BGM保持設定を変更できるよう定義
 // α0.2.0 対応シーンBGMの再生機能定義
+// α0.2.1 対応シーン離脱時にAスロをレジュームするように定義
 //=============================================================================*/
 /*:
  * @plugindesc 【wingly-Icoration】 [Tire 4] [Ver,α0.2.0] [IndividualSceneBGM] 
@@ -228,7 +229,7 @@
     const nextScene = SceneManager._nextScene; // 次のシーンを取得
 
     const SupportedScene = (sceneName) => sceneBgmMapping[sceneName];
-    const ExcludedScene = (sceneName) => ['Scene_Boot', 'Scene_Base', 'Scene_MenuBase', 'Scene_File'].includes(sceneName);
+    const ExcludedScene = (sceneName) => ['Scene_Boot', 'Scene_Base', 'Scene_MenuBase', 'Scene_File', 'Scene_Title'].includes(sceneName);
     const UnsupportedScene = (sceneName) => !SupportedScene(sceneName) && !ExcludedScene(sceneName);
 
 //=============================================================================
@@ -309,7 +310,7 @@
 
     class IndividualSceneBGM {
         static saveBGM() { //AスロにBGMを保存するスタティックメソッド
-            if (!playedASceneBGM && !playedBSceneBGM) {//対応シーンのBGMも、メニューシーンのBGMも再生されていない場合
+            if (!playedASceneBGM && !playedBSceneBGM) { //対応シーンのBGMも、メニューシーンのBGMも再生されていない場合
                 previousBgm = AudioManager.saveBgm(); // 現在再生中のBGMをAスロに保存
             } else { //そうでなければ何もしない
                 return;
@@ -317,11 +318,8 @@
         }
 
         static setupIndividualSceneBGM(sceneName) { //パラメーターから対応シーンBGMの設定を読み込み
-            // パラメータが存在するか確認
-            console.log("setup" + sceneName);
             const bgmSettingsString = parameters[sceneBgmMapping[sceneName]];
             if (!bgmSettingsString) {
-                console.error(`BGM settings for scene: ${sceneName} not found.`);
                 return { bgmList: [], index: -1 };  // 空のリストと無効なインデックスを返す
             }
 
@@ -355,7 +353,10 @@
         }
 
         static leaveIndividualScene() { // 対応シーンを離脱する時のスタティックメソッド
-            AudioManager.stopBgm();  // BGMを停止
+            if (playedASceneBGM) { //対応シーンBGMが再生されている場合
+                AudioManager.replayBgm(previousBgm);  // 非対応シーン用のBGMを復元
+                playedASceneBGM = false;  // 対応シーンBGMを再生していないことを示す
+            }            
         }
     }
 
