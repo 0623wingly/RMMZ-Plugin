@@ -355,6 +355,7 @@
         static saveBGM() {
             if (!playedASceneBGM && !playedBSceneBGM) {
                 previousBgm = AudioManager.saveBgm();
+                console.log("メニューから保存");
             }
         }
 
@@ -401,7 +402,7 @@
             if (MenuBGMkeep && playedBSceneBGM && !BScene(nextSceneName)) {
                 menuBgm = AudioManager.saveBgm();
             }
-            if (UnsupportedScene(nextSceneName)) {
+            if (UnsupportedScene(nextSceneName) && previousBgm) {
                 AudioManager.replayBgm(previousBgm);
                 playedBSceneBGM = false;
             }            
@@ -430,6 +431,7 @@
         static saveBGM() {
             if (!playedASceneBGM && !playedBSceneBGM) {
                 previousBgm = AudioManager.saveBgm();
+                console.log("対応から保存");
             }
         }
 
@@ -470,7 +472,7 @@
         }
 
         static leaveIndividualScene() {
-            if (playedASceneBGM) {
+            if (playedASceneBGM && previousBgm) {
                 AudioManager.replayBgm(previousBgm);
                 playedASceneBGM = false;
             }            
