@@ -13,10 +13,10 @@
 // α0.1.1 プラグインコマンドでメニュー画面BGM保持設定を変更できるよう定義
 // α0.2.0 対応シーンBGMの再生機能定義
 // α0.2.1 対応シーン離脱時にAスロをレジュームするように定義
-// 1.0.0 2024/10/15　完成
+// 1.0.0 2024/10/16 完成
 //=============================================================================*/
 /*:
- * @plugindesc 【wingly-Icoration】 [Tire 4] [Ver,0.0.0] [IndividualSceneBGM] 
+ * @plugindesc 【wingly-Icoration】 [Tire 4] [Ver,1.0.0] [IndividualSceneBGM] 
  * @author ﾜｲ式会社wingly Chat-GPT
  * @target MZ
  * @url https://raw.githubusercontent.com/0623wingly/RMMZ-Plugin/Tire4/WinglyMZ_4_IndividualSceneBGM.js
@@ -79,16 +79,15 @@
  * ◎プラグインコマンド
  * 「pushScene」
  * 指定のシーンに遷移するだけのコマンドです。
- * ・「Scene_Menu」メニュー画面  
+ * イベントコマンドに存在しない以下のSceneに対応しています。
  * ・「Scene_Item」アイテム画面
  * ・「Scene_Skill」スキル画面  
  * ・「Scene_Equip」装備画面  
  * ・「Scene_Status」ステータス画面  
- * ・「Scene_Options」オプション画面  
- * ・「Scene_Save」セーブ画面  
+ * ・「Scene_Options」オプション画面   
  * ・「Scene_load」ロード画面  
  * ・「Scene_gameEnd」ゲーム終了画面  
- * の９つのシーンへと遷移することができます。
+ *
  * ・「Scene_shop」ショップ画面 
  * ・「Scene_name」名前入力画面
  * の二つに関しては、そのほかの設定が必要になるため対応していません。
@@ -103,6 +102,7 @@
  * そのインデックスのBGMが再生されます。
  * OFFの場合はこのコマンドによる遷移時のみ、設定された
  * インデックスのBGMが再生され、シーン終了時に元に戻されます。
+ * なお、メニューはその性質上対応していません。
  * 
  * 「isMenuBGMkeep」
  * パラメータで設定できる、メニュー画面BGM保持設定を上書きすることができます。
@@ -129,7 +129,7 @@
  * ############################################################################
  * [Version History]～更新履歴～
  * ############################################################################
- * 1.0.0 2024/10/15　初版リリース
+ * 1.0.0 2024/10/16 初版リリース
  * ----------------------------------------------------------------------------
  * 
  * @command pushScene
@@ -139,8 +139,6 @@
  * @arg sceneName
  * @text 遷移するScene
  * @desc 遷移するSceneを選択してください。
- * @type select
- * @option メニュー
  * @value Scene_Menu
  * @option アイテム
  * @value Scene_Item
@@ -181,8 +179,6 @@
  * @text 遷移するScene
  * @desc 遷移するSceneを選択してください。
  * @type select
- * @option メニュー
- * @value Scene_Menu
  * @option アイテム
  * @value Scene_Item
  * @option スキル
@@ -378,12 +374,11 @@
                     this.saveBGM();
                     AudioManager.replayBgm(menuBgm);
                     playedBSceneBGM = true;
-                    return;
                 }
             } else if (menuIndex >= 0 && menuIndex < bgmList.length) {
                     const bgm = bgmList[menuIndex];
                     if (bgm && bgm.fileName) {
-                        this.saveBGM();  // Aスロに保存
+                        this.saveBGM();
                         AudioManager.playBgm({
                             name: bgm.fileName,
                             volume: parseInt(bgm.volume, 10),
@@ -533,7 +528,6 @@
                     const _SceneManager_pop = SceneManager.pop;
                     SceneManager.pop = function() {
                         _SceneManager_pop.call(this);
-                        // 前のシーンに戻ったら元の値に復元
                         $gameVariables.setValue(variableId, originalValue);
                     };
                 }
