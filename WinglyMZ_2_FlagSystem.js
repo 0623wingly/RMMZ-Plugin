@@ -11,7 +11,7 @@
 // 
 //=============================================================================*/
 /*:
- * @plugindesc 【wingly-Icoration】 [Tire 2] [Ver,0.0.0a] [FlagSystem] 
+ * @plugindesc 【wingly-Icoration】 [Tire 2] [Ver,0.0.1] [FlagSystem] 
  * @author ﾜｲ式会社wingly Chat-GPT
  * @target MZ
  * @url https://raw.githubusercontent.com/0623wingly/RMMZ-Plugin/refs/heads/Tire2/WinglyMZ_2_FlagSystem.js
@@ -448,6 +448,7 @@
  * ############################################################################
  * 0.0.0　// アルファリリース
  * 0.0.0a　// jsonチェックコード追加
+ * 0.0.1　// プラグインパラメーターを定義
  * ----------------------------------------------------------------------------
  * 
  * @param outputFlaginfo
@@ -487,32 +488,30 @@
     const pluginName = 'WinglyMZ_2_FlagSystem';
     const parameters = PluginManager.parameters(pluginName);
 
-    const flagsFilePath = "data/Flags.json";
-    const flagGroupFilePath = "data/FlagGroup.json";
-    const backupFolderPath = "data/backup";
+    const PARAMS = {
+        outputFlaginfo: parameters["outputFlaginfo"] === "true",
+        makeBackup: parameters["makebackup"] === "true",
+        makeBackupEverytime: parameters["makebackupEverytime"] === "true",
+        outputErrorlog: parameters["outputErrorlog"] === "true"
+    };
 
     class Game_Flags {
         constructor() {
             this._flags = [];
-            this._flagGroups = [];
         }
 
-        // JSONファイルの確認処理
         checkJSON() {
-            if ($gameTemp.isTestPlay()) {
-                if (!StorageManager.exists(flagsFilePath)) {
+            if ($gameTemp.isPlaytest()) {
+                console.log("テストプレイ中: Flags.json のチェックを開始");
+
+                if (!StorageManager.exists("data/Flags.json")) {
                     this.createDefaultFlags();
                 } else {
                     this.validateFlags();
                 }
-
-                if (!StorageManager.exists(flagGroupFilePath)) {
-                    this.createDefaultFlagGroups();
-                }
             }
         }
 
-        // デフォルトのFlags.jsonを作成
         createDefaultFlags() {
             this._flags = [
                 null,
@@ -521,27 +520,20 @@
             this.saveFlags();
         }
 
-        // デフォルトのFlagGroup.jsonを作成
-        createDefaultFlagGroups() {
-            this._flagGroups = [null];
-            this.saveFlagGroups();
-        }
-
-        // Flags.jsonのバリデーション
         validateFlags() {
             try {
-                const jsonData = StorageManager.loadJson(flagsFilePath);
+                const jsonData = StorageManager.loadJson("data/Flags.json");
                 let isValid = true;
                 let fixedFlags = [null];
                 const namesSet = new Set();
-        
+
                 for (let i = 1; i < jsonData.length; i++) {
                     const flag = jsonData[i];
-        
+
                     if (!flag || typeof flag !== "object") continue;
-        
-                    let originalFlag = { ...flag };
+
                     let modified = false;
+                    let originalFlag = { ...flag };
 
                     if (!Number.isInteger(flag.id) || flag.id < 0) {
                         flag.id = i - 1;
@@ -552,25 +544,25 @@
                         flag.type = 0;
                         modified = true;
                     }
-        
+
                     if (typeof flag.name !== "string" || namesSet.has(flag.name)) {
                         console.warn(`フラグ名のエラー: "${flag.name}" が無効または重複しています。`);
                         isValid = false;
-                        continue; // このフラグは完全に無効なのでスキップ
+                        continue;
                     }
                     namesSet.add(flag.name);
-        
+
                     const validConditions = ["True", "False", "Lock", "Broken"];
                     if (!validConditions.includes(flag.condition)) {
                         flag.condition = "False";
                         modified = true;
                     }
-        
+
                     if (typeof flag.value !== "boolean") {
                         flag.value = false;
                         modified = true;
                     }
-        
+
                     if (!Number.isInteger(flag.priority) || flag.priority < 0) {
                         flag.priority = 0;
                         modified = true;
@@ -585,43 +577,60 @@
                         console.warn(`フラグ修正:`, originalFlag, "→", flag);
                         isValid = false;
                     }
-        
+
                     fixedFlags.push(flag);
                 }
-        
-                if (!isValid) {
+
+                if (!isValid && PARAMS.makeBackup) {
                     this.createBackup();
                 }
-        
+
                 this._flags = fixedFlags;
                 this.saveFlags();
             } catch (error) {
-                console.error("Flags.jsonの読み込み中にエラー:", error);
+                console.error("Flags.json の読み込みエラー:", error);
                 this.createDefaultFlags();
             }
-        }        
+        }
 
         createBackup() {
-            if (!StorageManager.exists(backupFolderPath)) {
-                StorageManager.createFolder(backupFolderPath);
+            if (!StorageManager.exists("data/backup")) {
+                StorageManager.createFolder("data/backup");
             }
             const timestamp = Date.now();
-            const backupPath = `${backupFolderPath}/Flags_${timestamp}.json`;
+            const backupPath = `data/backup/Flags_${timestamp}.json`;
             StorageManager.saveJson(backupPath, this._flags);
             console.log(`バックアップ作成: ${backupPath}`);
+
+            if (PARAMS.outputErrorlog) {
+                const errorLogPath = `data/backup/ErrorLog_${timestamp}.txt`;
+                StorageManager.saveJson(errorLogPath, { error: "Flags.json に修正が加えられました" });
+                console.warn(`エラーログ出力: ${errorLogPath}`);
+            }
         }
 
         saveFlags() {
-            StorageManager.saveJson(flagsFilePath, this._flags);
-            console.log("Flags.jsonを更新しました。");
-        }
+            StorageManager.saveJson("data/Flags.json", this._flags);
+            console.log("Flags.json を更新しました。");
 
-        saveFlagGroups() {
-            StorageManager.saveJson(flagGroupFilePath, this._flagGroups);
-            console.log("FlagGroup.jsonを更新しました。");
+            if (PARAMS.makeBackupEverytime && PARAMS.makeBackup) {
+                this.createBackup();
+            }
         }
     }
 
+    // セーブデータロード後にフラグ情報を出力
+    const _DataManager_extractSaveContents = DataManager.extractSaveContents;
+    DataManager.extractSaveContents = function(contents) {
+        _DataManager_extractSaveContents.call(this, contents);
+        $gameFlags = contents.flags || new Game_Flags();
+
+        if (PARAMS.outputFlaginfo) {
+            console.log("ロードされたセーブデータのフラグ情報:", JSON.stringify($gameFlags._flags, null, 2));
+        }
+    };
+
+    // Scene_Boot で初期化
     const _Scene_Boot_start = Scene_Boot.prototype.start;
     Scene_Boot.prototype.start = function() {
         _Scene_Boot_start.call(this);
@@ -629,10 +638,6 @@
             $gameFlags = new Game_Flags();
         }
         $gameFlags.checkJSON();
-    };
-
-    Game_Temp.prototype.isTestPlay = function() {
-        return Utils.isOptionValid("test");
     };
 
     StorageManager.saveJson = function(filePath, data) {
@@ -661,5 +666,5 @@
             fs.mkdirSync(folderPath, { recursive: true });
         }
     };
-
+    
 })();
