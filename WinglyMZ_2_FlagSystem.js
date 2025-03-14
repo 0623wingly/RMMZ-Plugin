@@ -11,7 +11,7 @@
 // 
 //=============================================================================*/
 /*:
- * @plugindesc 【wingly-Icoration】 [Tire 2] [Ver,0.0.1] [FlagSystem] 
+ * @plugindesc 【wingly-Icoration】 [Tire 2] [Ver,0.0.2] [FlagSystem] 
  * @author ﾜｲ式会社wingly Chat-GPT
  * @target MZ
  * @url https://raw.githubusercontent.com/0623wingly/RMMZ-Plugin/refs/heads/Tire2/WinglyMZ_2_FlagSystem.js
@@ -449,6 +449,7 @@
  * 0.0.0　// アルファリリース
  * 0.0.0a　// jsonチェックコード追加
  * 0.0.1　// プラグインパラメーターを定義
+ * 0.0.2　// gameFlagsが未定義問題を解決
  * ----------------------------------------------------------------------------
  * 
  * @param outputFlaginfo
@@ -630,13 +631,13 @@
         }
     };
 
+    const $gameFlags = new Game_Flags();
+
     // Scene_Boot で初期化
-    const _Scene_Boot_start = Scene_Boot.prototype.start;
-    Scene_Boot.prototype.start = function() {
-        _Scene_Boot_start.call(this);
-        if (!$gameFlags) {
-            $gameFlags = new Game_Flags();
-        }
+    const _Scene_Boot_onDatabaseLoaded = Scene_Boot.prototype.onDatabaseLoaded;
+    Scene_Boot.prototype.onDatabaseLoaded = function () {
+        _Scene_Boot_onDatabaseLoaded.call(this);
+
         $gameFlags.checkJSON();
     };
 
@@ -666,5 +667,7 @@
             fs.mkdirSync(folderPath, { recursive: true });
         }
     };
+
+    window.$gameFlags = $gameFlags;
     
 })();
