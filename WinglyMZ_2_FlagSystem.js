@@ -11,7 +11,7 @@
 // 
 //=============================================================================*/
 /*:
- * @plugindesc 【wingly-Icoration】 [Tire 2] [Ver,0.0.2] [FlagSystem] 
+ * @plugindesc 【wingly-Icoration】 [Tire 2] [Ver,0.0.3] [FlagSystem] 
  * @author ﾜｲ式会社wingly Chat-GPT
  * @target MZ
  * @url https://raw.githubusercontent.com/0623wingly/RMMZ-Plugin/refs/heads/Tire2/WinglyMZ_2_FlagSystem.js
@@ -450,6 +450,7 @@
  * 0.0.0a　// jsonチェックコード追加
  * 0.0.1　// プラグインパラメーターを定義
  * 0.0.2　// gameFlagsが未定義問題を解決
+ * 0.0.3　// テストプレイかの判定が出来ていなかった問題を修正
  * ----------------------------------------------------------------------------
  * 
  * @param outputFlaginfo
@@ -502,14 +503,10 @@
         }
 
         checkJSON() {
-            if ($gameTemp.isPlaytest()) {
-                console.log("テストプレイ中: Flags.json のチェックを開始");
-
-                if (!StorageManager.exists("data/Flags.json")) {
-                    this.createDefaultFlags();
-                } else {
-                    this.validateFlags();
-                }
+            if (!StorageManager.exists("data/Flags.json")) {
+                this.createDefaultFlags();
+            } else {
+                this.validateFlags();
             }
         }
 
@@ -631,6 +628,7 @@
         }
     };
 
+    const isTestPlay = Utils.isOptionValid("test");
     const $gameFlags = new Game_Flags();
 
     // Scene_Boot で初期化
@@ -638,7 +636,11 @@
     Scene_Boot.prototype.onDatabaseLoaded = function () {
         _Scene_Boot_onDatabaseLoaded.call(this);
 
-        $gameFlags.checkJSON();
+        if (isTestPlay) {
+            console.log("テストプレイ中: Flags.json のチェックを開始");
+            $gameFlags.checkJSON();
+        }
+
     };
 
     StorageManager.saveJson = function(filePath, data) {
