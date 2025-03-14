@@ -11,7 +11,7 @@
 // 
 //=============================================================================*/
 /*:
- * @plugindesc 【wingly-Icoration】 [Tire 2] [Ver,0.0.4] [FlagSystem] 
+ * @plugindesc 【wingly-Icoration】 [Tire 2] [Ver,0.0.5] [FlagSystem] 
  * @author ﾜｲ式会社wingly Chat-GPT
  * @target MZ
  * @url https://raw.githubusercontent.com/0623wingly/RMMZ-Plugin/refs/heads/Tire2/WinglyMZ_2_FlagSystem.js
@@ -452,6 +452,7 @@
  * 0.0.2　// gameFlagsをしっかりと定義
  * 0.0.3　// テストプレイかの判定が出来ていなかった問題を修正
  * 0.0.4　// パスを定義する変数を追加,FlagGroup.jsonが出力されていなかった問題を修正
+ * 0.0.5  // jsonをそれぞれ別の形で整形して出力するように変更
  * ----------------------------------------------------------------------------
  * 
  * @param outputFlaginfo
@@ -495,12 +496,12 @@
         outputFlaginfo: parameters["outputFlaginfo"] === "true",
         makeBackup: parameters["makebackup"] === "true",
         makeBackupEverytime: parameters["makebackupEverytime"] === "true",
-        outputErrorlog: parameters["outputErrorlog"] === "true"
+        outputErrorlog: parameters["outputErrorlog"] === "true",
     };
 
     const fs = require("fs");
     const path = require("path");
-    
+ 
     const flagsFilePath = path.join("data", "Flags.json");
     const flagGroupFilePath = path.join("data", "FlagGroup.json");
     const backupFolderPath = path.join("data", "backup");
@@ -508,32 +509,34 @@
     class Game_Flags {
         constructor() {
             this._flags = [];
+            this._flagGroups = [];
         }
 
         checkJSON() {
-            if (!StorageManager.exists(flagsFilePath)) {
+            if (!StorageManager.exists(flagsFilePath, "Flags")) {
                 this.createDefaultFlags();
             } else {
                 this.validateFlags();
             }
-
-            if (!StorageManager.exists(flagGroupFilePath)) {
+        
+            if (!StorageManager.exists(flagGroupFilePath, "FlagGroup")) {
                 this.createDefaultFlagGroups();
             }
-
-        }
+        }        
 
         createDefaultFlags() {
             this._flags = [
-                null,
-                { id: 0, type: 0, name: "TestFlag", condition: "False", value: false, priority: 0, relation: 0 }
-            ];
+null,
+{"id":0,"type":0,"name":"TestFlag","condition":"False","value":false,"priority":0,"relation":0}
+];
             this.saveFlags();
         }
 
         // デフォルトのFlagGroup.jsonを作成
         createDefaultFlagGroups() {
-            this._flagGroups = [null];
+            this._flagGroups = [
+            null
+            ];
             this.saveFlagGroups();
         }
 
@@ -625,20 +628,26 @@
                 console.warn(`エラーログ出力: ${errorLogPath}`);
             }
         }
-
+        
         saveFlags() {
-            StorageManager.saveJson("data/Flags.json", this._flags);
-            console.log("Flags.json を更新しました。");
-
-            if (PARAMS.makeBackupEverytime && PARAMS.makeBackup) {
-                this.createBackup();
+            try {
+                StorageManager.saveJson(flagsFilePath, this._flags, "Flags");
+        
+                if (PARAMS.makeBackupEverytime && PARAMS.makeBackup) {
+                    this.createBackup();
+                }
+            } catch (error) {
+                console.error("Flags.json の保存に失敗:", error);
             }
         }
         
         saveFlagGroups() {
-            fs.writeFileSync(flagGroupFilePath, JSON.stringify(this._flagGroups, null, 2), "utf8");
-            console.log("FlagGroup.jsonを更新しました。");
-        }
+            try {
+                StorageManager.saveJson(flagGroupFilePath, this._flagGroups, "FlagGroup");
+            } catch (error) {
+                console.error("FlagGroup.json の保存に失敗:", error);
+            }
+        }                     
     }
 
     // セーブデータロード後にフラグ情報を出力
@@ -667,22 +676,57 @@
 
     };
 
-    StorageManager.saveJson = function(filePath, data) {
-        const json = JSON.stringify(data, null, 2);
-        fs.writeFileSync(filePath, json, "utf8");
-    };
-
-    StorageManager.loadJson = function(filePath) {
-        if (fs.existsSync(filePath)) {
-            const json = fs.readFileSync(filePath, "utf8");
-            return JSON.parse(json);
+    StorageManager.saveJson = function(filePath, data, type = "Unknown") {
+        try {
+            if (!filePath) {
+                throw new Error(`saveJson の filePath が未定義です。 type: ${type}`);
+            }
+    
+            let json;
+            if (type === "Flags") {
+                const formattedFlags = data.map(flag => JSON.stringify(flag, null, 0)).join(",\n");
+                json = `[\n${formattedFlags}\n]`;
+            } else if (type === "FlagGroup") {
+                json = JSON.stringify(data, null, 2);
+            } else {
+                json = JSON.stringify(data);
+            }
+    
+            fs.writeFileSync(filePath, json, "utf8");
+    
+            console.log(`${type}.json を正常に保存しました。`);
+        } catch (error) {
+            console.error(`${type}.json の保存に失敗:`, error);
         }
-        return null;
     };
 
-    StorageManager.exists = function(filePath) {
-        return fs.existsSync(filePath);
+    StorageManager.loadJson = function(filePath, type = "Unknown") {
+        try {
+            if (fs.existsSync(filePath)) {
+                const json = fs.readFileSync(filePath, "utf8");
+                const parsedData = JSON.parse(json);
+    
+                if (parsedData === null || parsedData === undefined) {
+                    console.warn(`${type}.json が null です。デフォルトデータを返します。`);
+                    return type === "Flags" ? [null] : [];
+                }
+    
+                return parsedData;
+            } else {
+                console.warn(`${type}.json が存在しません。デフォルトデータを返します。`);
+                return type === "Flags" ? [null] : [];
+            }
+        } catch (error) {
+            console.error(`${type}.json の読み込みに失敗しました:`, error);
+            return type === "Flags" ? [null] : [];
+        }
     };
+
+    StorageManager.exists = function(filePath, type = "Unknown") {
+        const exists = fs.existsSync(filePath);
+        console.log(`${type}.json の存在確認: ${exists ? "存在する" : "存在しない"}`);
+        return exists;
+    };    
 
     StorageManager.createFolder = function(folderPath) {
         if (!fs.existsSync(folderPath)) {
