@@ -11,7 +11,7 @@
 // 
 //=============================================================================*/
 /*:
- * @plugindesc 【wingly-Icoration】 [Tire 2] [Ver,0.0.3] [FlagSystem] 
+ * @plugindesc 【wingly-Icoration】 [Tire 2] [Ver,0.0.4] [FlagSystem] 
  * @author ﾜｲ式会社wingly Chat-GPT
  * @target MZ
  * @url https://raw.githubusercontent.com/0623wingly/RMMZ-Plugin/refs/heads/Tire2/WinglyMZ_2_FlagSystem.js
@@ -449,8 +449,9 @@
  * 0.0.0　// アルファリリース
  * 0.0.0a　// jsonチェックコード追加
  * 0.0.1　// プラグインパラメーターを定義
- * 0.0.2　// gameFlagsが未定義問題を解決
+ * 0.0.2　// gameFlagsをしっかりと定義
  * 0.0.3　// テストプレイかの判定が出来ていなかった問題を修正
+ * 0.0.4　// パスを定義する変数を追加,FlagGroup.jsonが出力されていなかった問題を修正
  * ----------------------------------------------------------------------------
  * 
  * @param outputFlaginfo
@@ -497,17 +498,29 @@
         outputErrorlog: parameters["outputErrorlog"] === "true"
     };
 
+    const fs = require("fs");
+    const path = require("path");
+    
+    const flagsFilePath = path.join("data", "Flags.json");
+    const flagGroupFilePath = path.join("data", "FlagGroup.json");
+    const backupFolderPath = path.join("data", "backup");
+
     class Game_Flags {
         constructor() {
             this._flags = [];
         }
 
         checkJSON() {
-            if (!StorageManager.exists("data/Flags.json")) {
+            if (!StorageManager.exists(flagsFilePath)) {
                 this.createDefaultFlags();
             } else {
                 this.validateFlags();
             }
+
+            if (!StorageManager.exists(flagGroupFilePath)) {
+                this.createDefaultFlagGroups();
+            }
+
         }
 
         createDefaultFlags() {
@@ -518,9 +531,15 @@
             this.saveFlags();
         }
 
+        // デフォルトのFlagGroup.jsonを作成
+        createDefaultFlagGroups() {
+            this._flagGroups = [null];
+            this.saveFlagGroups();
+        }
+
         validateFlags() {
             try {
-                const jsonData = StorageManager.loadJson("data/Flags.json");
+                const jsonData = StorageManager.loadJson(flagsFilePath);
                 let isValid = true;
                 let fixedFlags = [null];
                 const namesSet = new Set();
@@ -592,8 +611,8 @@
         }
 
         createBackup() {
-            if (!StorageManager.exists("data/backup")) {
-                StorageManager.createFolder("data/backup");
+            if (!StorageManager.exists(backupFolderPath)) {
+                StorageManager.createFolder(backupFolderPath);
             }
             const timestamp = Date.now();
             const backupPath = `data/backup/Flags_${timestamp}.json`;
@@ -614,6 +633,11 @@
             if (PARAMS.makeBackupEverytime && PARAMS.makeBackup) {
                 this.createBackup();
             }
+        }
+        
+        saveFlagGroups() {
+            fs.writeFileSync(flagGroupFilePath, JSON.stringify(this._flagGroups, null, 2), "utf8");
+            console.log("FlagGroup.jsonを更新しました。");
         }
     }
 
@@ -645,12 +669,10 @@
 
     StorageManager.saveJson = function(filePath, data) {
         const json = JSON.stringify(data, null, 2);
-        const fs = require("fs");
         fs.writeFileSync(filePath, json, "utf8");
     };
 
     StorageManager.loadJson = function(filePath) {
-        const fs = require("fs");
         if (fs.existsSync(filePath)) {
             const json = fs.readFileSync(filePath, "utf8");
             return JSON.parse(json);
@@ -659,12 +681,10 @@
     };
 
     StorageManager.exists = function(filePath) {
-        const fs = require("fs");
         return fs.existsSync(filePath);
     };
 
     StorageManager.createFolder = function(folderPath) {
-        const fs = require("fs");
         if (!fs.existsSync(folderPath)) {
             fs.mkdirSync(folderPath, { recursive: true });
         }
