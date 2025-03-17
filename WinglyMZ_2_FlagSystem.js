@@ -1,0 +1,622 @@
+//=============================================================================
+// FlagSystem.js
+//----------------------------------------------------------------------------
+// © 2025 wingly-Icoration. All Right Reserved.
+// This software is released under the MIT License.
+// http://opensource.org/licenses/mit-license.php
+// Made with OpenAI Chat-GPT.
+// https://openai.com/chatgpt
+//----------------------------------------------------------------------------
+// [Version History]～更新履歴～
+// 
+//=============================================================================*/
+/*:
+ * @plugindesc 【wingly-Icoration】 [Tire 2] [Ver,0.0.0] [FlagSystem] 
+ * @author ﾜｲ式会社wingly Chat-GPT
+ * @target MZ
+ * @url https://raw.githubusercontent.com/0623wingly/RMMZ-Plugin/refs/heads/Tire2/WinglyMZ_2_FlagSystem.js
+ *
+ * @help
+ *
+ * WinglyプラグインNo.3
+ * イベントの進行状況を管理する「フラグ」を追加するプラグイン
+ * ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ *                                  Tire 2
+ * ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ * このプラグインのTireは2です。Tire2は「独自機能・独自構造」のプラグイン群です。
+ * 他のプラグインとの競合に注意し、Tire1より下Tire3より上に配置してください。
+ * ただし、VisuStellaのTire2プラグインよりも下に配置してください。
+ * ----------------------------------------------------------------------------
+ * 
+ * ============================================================================
+ *                                  概要
+ * ============================================================================
+ * 「フラグ」はスイッチに代わる、新たな条件分岐アイテムです。
+ * イベントの進行状況を管理するための多機能専門スイッチのようなものです。
+ * スイッチとは違い、多くのプロパティを持ち、複数の異なる状態を持ちます。
+ * そのため、より複雑な条件分岐や、関連性を持たすことが可能です。
+ * フラグは、$gameFlagsオブジェクトによって定義されています。
+ * フラグの管理はdataフォルダ内の「Flags.json」ファイルで行います。
+ * このJSONファイルはテストプレイ開始時に自動生成されます。
+ * フラグはこのJSONを直接編集することで追加・削除・変更が可能です。
+ * プラグインコマンドを使ってのフラグの操作も可能です。
+ * Flags.jsonはあくまでもフラグのデフォルト値を保持するためのものであり、
+ * ゲーム中に変更されたフラグデータは各セーブデータに保存されます。
+ * 
+ * ============================================================================
+ *                                  特徴
+ * ============================================================================
+ * フラグは基本的にはスイッチと同様に扱うことができますが、
+ * スイッチにはないいくつかの特徴があります。
+ * 
+ * ①フラグタイプ
+ * フラグは二種類存在します。
+ * 「ローカルフラグ(ノーマルフラグ)」と「グローバルフラグ」です。
+ * これらはプロパティ"type"によって定義されます。
+ * 0なら、ローカルフラグ、1ならグローバルフラグです。
+ * デフォルトでは0が代入されています。
+ * フラグの状態や値は、各セーブファイル依存となりますが、
+ * グローバルフラグの状態や値は全てのセーブファイルで共有されるため、
+ * ゲーム全体で、共通のフラグとして使用することができます。
+ * 
+ * ②名称
+ * スイッチは、IDで管理されていますが、フラグは名称で管理されます。
+ * フラグの名称はプロパティ"name"によって定義されます。
+ * フラグの名前を文字列として格納してください。
+ * このフラグの名称は厳格に判別されます。
+ * 例えば、"Flag1"と"flag1"と"flag 1"は別のフラグとして扱われます。
+ * 
+ * ③状態
+ * フラグには、計４つの状態が存在します。True, False, Lock, Brokenです。
+ * これらの状態はプロパティ"condition"によって定義されます。
+ * このプロパティには状態がそのまま文字列として格納されます。
+ * 
+ * ----------------------------------------------------------------------------
+ * "それぞれの状態について"
+ * ----------------------------------------------------------------------------
+ * ⒈True
+ * スイッチと同様の状態です。フラグの値の判別が有効であることを示します。
+ * このフラグの状態を「立っている状態」といいます。
+ * また、フラグをこの状態にすることを「フラグを立たせる、上げる」といいます。
+ * この状態のフラグは「正のフラグ」として評価されます。
+ * 
+ * ⒉False
+ * スイッチにはない状態です。フラグの値の判別が無効であることを示します。
+ * このフラグの状態を「下ろされている状態」といいます。
+ * また、フラグをこの状態にすることを「フラグを下ろす」といいます。
+ * この状態のフラグは「負のフラグ」として評価されます。
+ * 負のフラグは値に関わらず、評価時にfalseが返されます。
+ * 
+ * ⒊Lock
+ * スイッチにはない状態です。
+ * フラグの評価が行われ、値が固定されていることを示します。
+ * このフラグの状態を「回収されている状態」といいます。
+ * また、フラグをこの状態にすることを「フラグを回収する」といいます。
+ * 基本的にはTrueと同じく正のフラグとして扱われますが、
+ * 値を変更することができず、固定された完全なフラグとしても扱われます。
+ * そのため、この状態のフラグは「完全に正のフラグ」として評価されます。
+ * 
+ * ⒋Broken
+ * スイッチにはない状態です。
+ * フラグの評価が行われず、値が不明であることを示します。
+ * このフラグの状態を「折れている状態」といいます。
+ * また、フラグをこの状態にすることを「フラグを折る」といいます。
+ * 基本的にはFalseと同じく負のフラグとして扱われますが、
+ * 値を変更することができず、固定された完全なフラグとしても扱われます。
+ * そのため、この状態のフラグは「完全に負のフラグ」として評価されます。
+ * 
+ * ----------------------------------------------------------------------------
+ * ④値
+ * スイッチ同様、フラグもブール値を持ちます。trueかfalseです。
+ * この値はプロパティ"value"によって定義されます。
+ * 値がtrueのフラグを「真フラグ」、
+ * 値がfalseのフラグを「偽フラグ」として評価します。
+ * 前述の通り、負のフラグは値に関わらず、評価時にfalseが返されます。
+ * 
+ * ⑤優先度
+ * フラグにはスイッチとは異なり、優先度を付けることができます。
+ * 優先度はプロパティ"priority"によって定義され、0以上の整数で表されます。
+ * 全てのフラグはデフォルトで優先度0を持ちます。
+ * この優先度は、複数のフラグを利用するときに活用されます。
+ * 複数のフラグが同時に評価される場合、優先度の高いフラグが優先的に評価されます。
+ * また、優先度が高いフラグは、自身よりも優先度の低いフラグを子として関連付けて、
+ * グループを形成することができます。
+ * 
+ * ⑥関連性
+ * フラグはスイッチとは異なり、フラグ同士で関連性を持たせることができます。
+ * フラグの関連性は、プロパティ"relation"によって定義されます。
+ * 関連性を持たない場合は、0,なんらかの関連性を持つ場合は1です。
+ * BANされた場合は-1です。
+ * 関連付けがされている場合は、優先度を変更することができません。
+ * 
+ * ----------------------------------------------------------------------------
+ * "フラグの関連付けについて"
+ * ----------------------------------------------------------------------------
+ * 親となる優先度の高いフラグを起点に、
+ * 自身よりも優先度の低いフラグを子フラグとして関連付けることができます。
+ * このフラグの親子関係は、FlagGroup.jsonファイルで管理されます。
+ * このJSONファイルもテストプレイ開始時に自動生成されます。
+ * FlagGroup.jsonは、グループ名をキーとして、親フラグと
+ * その親フラグに関連付けられた子フラグの名前の配列を値として持ちます。
+ * 優先度の項目で説明した通り、子フラグは親フラグよりも優先度が低い必要があります。
+ * 
+ * 子フラグは"status"プロパティを持ちます。
+ * このプロパティには、子フラグの状態が格納されます。
+ * 通常なら0,除外されていたら1,BANされていたら-1です。
+ * 
+ * フラグの関連付けのルールを以下に示します。
+ * ⒈フラグの関連付けには、優先度の異なる二つ以上のフラグが必要である。
+ * ⒉その中で最も優先度が高いフラグが親フラグとなり、
+ * 　その親フラグよりも優先度の低いフラグが子のフラグとして関連付けられる。
+ * ⒊優先度が0のフラグは親フラグになることができない。
+ * ⒋完全なフラグは関連付けを行うことができない。
+ * ⒌グループ名は、フラグ名称同様、全て異なるものである必要がある。
+ * 
+ * ----------------------------------------------------------------------------
+ * "フラグ同士の呼応について"
+ * ----------------------------------------------------------------------------
+ * 関連付けられた子フラグは、親フラグの変化に"呼応"するようになります。
+ * 基本的には、親フラグが回収された時、全ての子フラグが自動的に立ちます。
+ * これにより、例えば、第一章のクリアフラグを回収し、
+ * 次の第二章に関わるイベントのフラグを立たせ、
+ * 第二章のイベントを開始するといったようなことができます。
+ * ちなみに、親フラグの変化に合わせ、子フラグを変化させられるだけであり、
+ * 子フラグの変化に合わせ、親フラグの状態や値を変化させることはできません。
+ * この呼応について、呼応条件と呼応結果はFlagGroup.jsonで管理されます。
+ * 呼応条件はプロパティ"trigger"によって定義されます。
+ * 呼応結果はプロパティ"effect"によって定義されます。
+ * どちらも、条件にする、または変化先の状態と値が格納されます。
+ * 
+ * ----------------------------------------------------------------------------
+ * "例外化"
+ * ----------------------------------------------------------------------------
+ * 基本的に、子のフラグは親のフラグに呼応して状態や値が変化しますが、
+ * 例外化させることで、子フラグが親フラグに呼応しないようにすることができます。
+ * 二種類の例外化があります。"除外"と"BAN"です。
+ * どちらも共通して親のフラグに呼応しないという特徴を持ちます。
+ * しかし、BANされたフラグはそのグループから外されるため、
+ * 親のフラグに呼応しなくなります。
+ * それだけでなく、そのフラグはグループを形成することも、
+ * グループに所属することもできなくなります。
+ * 除外はそのグループからのみ外されるだけですが、
+ * BANは全てのグループから外されます。
+ * 元の関連性の情報は保持されているため、
+ * いつでも元に戻すことができます。
+ * これらの例外的な子のフラグは、プロパティ"relation"によって定義されます。
+ * 
+ * ----------------------------------------------------------------------------
+ * "フラグの作成方法"
+ * ----------------------------------------------------------------------------
+ * フラグを作成することを、"フラグを制定する"といいます。
+ * フラグを制定する方法は二つあります。
+ * 一つ目は、後述する「フラグコマンド(`setcommand`)」を使用する方法です。
+ * これは最も簡単であり、最も安全な方法です。
+ * 基本的にはフラグコマンドを利用することを推奨します。
+ * 二つ目は、直接、Flags.jsonを編集する方法です。
+ * 一気に複数のフラグを視覚的に分かりやすく制定することができますが、
+ * 各フラグのプロパティの性質を正確に把握している必要があります。
+ * テストプレイ開始時に毎回Flags.jsonがチェックされ、
+ * 不正なデータがある場合は、自動的に修正されます。
+ * もし、Flags.jsonを直接編集することが多い場合は、
+ * 下記で紹介するパラメーター"makebackup"をONにしておくとよいでしょう。
+ * いづれにせよ、jsonの直接編集は非推奨です。
+ * 
+ * ============================================================================
+ *                              プラグインパラメーター
+ * ============================================================================
+ * "outputFlaginfo"
+ * ----------------------------------------------------------------------------
+ * テストプレイ時に、フラグ情報を出力するかどうかを設定します。
+ * trueの場合、
+ * セーブデータロード後に、
+ * そのセーブデータのフラグ情報がデバッグコンソールに出力されます。
+ * それぞれのフラグのプロパティが、
+ * 現在どうなっているのかを確認したい場合に使用してください。
+ * デフォルトはtrueです。
+ * 
+ * ----------------------------------------------------------------------------
+ * "makebackup"
+ * ----------------------------------------------------------------------------
+ * テストプレイ実行時、様々な場面で、
+ * Flags.jsonの中身は変更される可能性があります。そのため、
+ * デフォルトではFlags.jsonの置き換え前にバックアップを出力するように
+ * 設定されています。(出力先: data/backup)
+ * もし、このバックアップを出力したくない場合は、falseに設定してください。
+ * 
+ * ----------------------------------------------------------------------------
+ * "makebackupEverytime"
+ * ----------------------------------------------------------------------------
+ * デフォルトでは、エラーが発生していない、
+ * つまり、Flags.jsonの中身に変更がない場合、
+ * バックアップは出力されないように設定されています。
+ * もし、エラーが発生していなくても、
+ * 常に必ずバックアップを出力するようにしたい場合は、
+ * trueに設定してください。
+ * デフォルトはfalseです。
+ * ちなみに、こちらは常にバックアップを出力するかどうかの設定であるため、
+ * そもそもバックアップを出力しない設定になっている場合は無効です。
+ * 
+ * ----------------------------------------------------------------------------
+ * "outputErrorlog"
+ * ----------------------------------------------------------------------------
+ * バックアップを出力する際、エラーログも出力するかどうかを設定します。
+ * エラーログは、デベロッパーツールのコンソールに出力されるものと同等です。
+ * バックアップと同じくdata/backupにテキストファイルとして出力されます。
+ * trueの場合、バックアップ時にエラーログも出力されます。
+ * バックアップを出力しない設定になっている場合は無効です。
+ * デフォルトはtrueです。
+ * 
+ * ============================================================================
+ *                                 機能
+ * ============================================================================
+ * "フラグコマンド"
+ * ----------------------------------------------------------------------------
+ * フラグコマンドとは、フラグをコントロールするためのコマンドです。
+ * フラグの情報を取得する、`debugcommand`、
+ * フラグの制定を行う、`setcommand`、
+ * フラグの操作(変更)を行う、`editcommand`、
+ * フラグの評価を行う、`evalcommand`、
+ * フラグの関連付けを行う、`relatecommand`があります。
+ * 基本的に、フラグコマンドは、プラグインコマンド、
+ * スクリプトコマンドで、同様の名称、機能を持ちます。
+ * しかし、一部、プラグインコマンドでのみ扱えるものと、
+ * スクリプトコマンドでのみ扱えるものがあります。
+ * 
+ * 基本的なフラグコマンドの式は以下の通りです。
+ * $gameFlags.[flagcommand](arg1, arg2, arg3, ...);
+ * 一部のフラグコマンドは、"$gameFlags."を省略して、
+ * グローバル関数として使用することができます。
+ * 基本的に、第一引数はプロパティ"name"の値になることが多いです。
+ * 基本的には引数に"name"が必須ですが、省略することが可能です。
+ * 省略する場合は、本来の引数の位置に、nullを代入してください。
+ * 省略された場合は、
+ * 一番最後に`evalcommand`で評価されたフラグの名称が自動的に代入されます。
+ * この値は、$gameTemp.currentEvaledflagに格納されています。
+ * $gameTempでの保存となっているため、ゲームがリセットされた後は
+ * 上手く動作しない可能性がありますのでご注意ください。
+ * プロパティ"condition",プロパティ"value"の値は、
+ * 対応する数値での指定も可能です。
+ * "True"は10, "False"は20, "Lock"は30, "Broken"は40、
+ * trueは1, falseは0です。
+ * 引数に不適切な値を入力した場合、エラーが発生します。
+ * プロパティ"name"に関するエラーが起きた場合は、
+ * そのコマンドは実行されず、エラー内容がコンソールに出力されます。
+ * それ以外のプロパティに関するエラーが起きた場合は、
+ * 同様にコマンドが実行されない場合もあれば、
+ * デフォルトの適切な値に置き換えられて実行される場合もあります。
+ * 
+ * ----------------------------------------------------------------------------
+ * "フラグモディファイア"
+ * ----------------------------------------------------------------------------
+ * 一部のフラグコマンドは、フラグモディファイアを使用することができます。
+ * フラグモディファイアは種類あります。
+ * ⒈コマンドモディファイア
+ * 　コマンドモディファイアは、フラグコマンドの機能を拡張するものです。
+ * 　通常、フラグコマンドの後ろに記述して使用します。
+ * 　コマンドモディファイアを使用する場合、
+ * 　指定する引数が変化する場合があります。
+ * ⒉引数モディファイア
+ * 　引数モディファイアは、フラグコマンドの引数を変更するものです。
+ * 　通常、フラグコマンドの引数の後ろに記述して使用します。
+ * 　引数モディファイアを使用することにより、
+ * 　返り値の逆転や、特定の条件を指定することが可能です。
+ * 
+ * ----------------------------------------------------------------------------
+ * "フラグファンクション"
+ * ----------------------------------------------------------------------------
+ * フラグファンクションは、フラグコマンドを関数として使用することができます。
+ * これは、フラグコマンドを関数として使用することで、
+ * より柔軟なフラグの操作が可能となります。
+ * 例えば、特定のフラグコマンドによって得られた値を、
+ * 特定のフラグコマンドに引数として渡すことができます。
+ * これにより、複数種類の値を引数に、
+ * フラグコマンドを実行することが可能です。
+ * その他、返り値の計算や、比較、条件分岐なども可能です。
+ * フラグファンクションは、$gameFlagfuncにて定義されます。
+ * フラグファンクションで、用いられるフラグコマンドを、
+ * ファンクコマンドと呼びます。ファンクコマンドには、
+ * 引数を扱う、`argFunccommand`,
+ * 計算を行う、`calcFunccommand`,
+ * コマンドの実行を行う、`execFunccommand`があります。 
+ * 
+ * %&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&
+ *                                  注意事項
+ * &%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%
+ * このプラグインはChat-GPT君が作成してくれたものを参考に
+ * 僕が簡単な修正を加えたものです。僕はただ彼に依頼し、
+ * ネットの情報や他者プラグインを参考にコピペ修正をしただけです。
+ * コードの構造は理解出来ていません。
+ * 僕が分かるのは何が行われているのかということだけです。
+ * ----------------------------------------------------------------------------
+ *  
+ * \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+ *                                  利用規約
+ * \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+ * なし。どうぞご自由に。お好きにお使いください。
+ * ゲームジャンル問わず。無断改変、再配布、などなど諸々可能です。
+ * 一切の制限がありません。このプラグインはもう既にあなたのものです。
+ * ----------------------------------------------------------------------------
+ *  
+ * ############################################################################
+ * [Version History]～更新履歴～（開発中）
+ * ############################################################################
+ * 0.0.0  // JSONファイルの読み込み、書き込み機能を実装
+ * ----------------------------------------------------------------------------
+ * 
+ * @param outputFlaginfo
+ * @text フラグ情報の出力
+ * @desc trueの場合、ゲーム開始後フラグ情報が出力されます。<br>テストプレイ時のみ有効です。
+ * @default true
+ * @type boolean
+ * 
+ * @ --------------------------------------------------------------------------
+ * 
+ * @param makebackup
+ * @text バックアップ出力
+ * @desc trueの場合Flags.json置き換え前にバックアップを出力します。<br>テストプレイ時のみ有効です。
+ * @default true
+ * @type boolean
+ * 
+ * @param makebackupEverytime
+ * @text 必ずバックアップ出力
+ * @desc trueの場合エラーがなくても必ずバックアップが作成されます。<br>テストプレイ時のみ有効です。
+ * @parent makebackup
+ * @default false
+ * @type boolean
+ * 
+ * @param outputErrorlog
+ * @text エラーログ出力
+ * @desc trueの場合バックアップ時にエラーログも出力されます。<br>テストプレイ時のみ有効です。
+ * @parent makebackup
+ * @default true
+ * @type boolean
+ * 
+ *  
+ */
+
+$gameFlags = null;
+
+ (() => {
+    "use strict";
+
+    const pluginName = 'WinglyMZ_2_FlagSystem';
+    const parameters = PluginManager.parameters(pluginName);
+
+    const PARAMS = {
+        outputFlaginfo: parameters["outputFlaginfo"] === "true",
+        makeBackup: parameters["makebackup"] === "true",
+        makeBackupEverytime: parameters["makebackupEverytime"] === "true",
+        outputErrorlog: parameters["outputErrorlog"] === "true",
+    };
+
+    const fs = require("fs");
+    const path = require("path");
+    const flagsFilePath = path.join("data", "Flags.json");
+    const flagGroupsFilePath = path.join("data", "FlagGroups.json");
+    const backupFolderPath = path.join("data", "backup");
+
+    const defaultFlags = [
+null,
+{"id":0,"type":0,"name":"TestFlag","condition":"False","value":false,"priority":0,"relation":0}
+];
+
+    const defaultFlagGroups = [
+        null,
+        ];
+
+//=============================================================================
+// DataManager
+//=============================================================================
+
+    const _DataManager_createGameObjects = DataManager.createGameObjects;
+    DataManager.createGameObjects = function() {
+        _DataManager_createGameObjects.call(this);
+        $gameFlags = new Game_Flags();
+    };
+
+    const _DataManager_makeSaveContents = DataManager.makeSaveContents;
+    DataManager.makeSaveContents = function() {
+        const contents = _DataManager_makeSaveContents.call(this);
+        contents.flags = $gameFlags;
+        contents.flagGroups = $gameFlags._flagGroups || [];
+        return contents;
+    };
+    
+    const _DataManager_extractSaveContents = DataManager.extractSaveContents;
+    DataManager.extractSaveContents = function(contents) {
+        _DataManager_extractSaveContents.call(this, contents);
+
+        $gameFlags = contents.flags || new Game_Flags();
+        $gameFlags._flagGroups = contents.flagGroups || [];
+    };
+
+//=============================================================================
+// StorageManager
+//=============================================================================
+
+    StorageManager.createFlagsJson = function() {
+        if (fs.existsSync(flagsFilePath)) {
+            console.log("Flags.json はすでに存在します。");
+            return;
+        }
+
+        try {
+            const formatLevel = $dataSystem?.editor?.jsonFormatLevel ?? 1;
+            const space = formatLevel > 1 ? 4 : null;
+            let jsonData = JSON.stringify(defaultFlags, null, space);
+            if (formatLevel === 1) {
+                jsonData = jsonData.replace(/^\[/, "[\n");
+                jsonData = jsonData.replace(/null,/, "null,\n");
+                jsonData = jsonData.replace(/},/g, "},\n");
+                jsonData = jsonData.replace(/\]$/, "\n]");
+            }             
+            fs.writeFileSync(flagsFilePath, jsonData, "utf8");
+            console.log(`Flags.json が保存されました。formatLevel = ${formatLevel}`);
+        } catch (error) {
+            console.error("Flags.json の保存に失敗しました:", error);
+        }
+    };
+
+    StorageManager.saveFlagsJson = function() {
+        try {
+            const formatLevel = $dataSystem?.editor?.jsonFormatLevel ?? 1;
+            const space = formatLevel === 2 ? 4 : null;
+            let jsonData = JSON.stringify($gameFlags, null, space);
+            if (formatLevel === 1) {
+                jsonData = jsonData.replace(/^\[/, "[\n");
+                jsonData = jsonData.replace(/null,/, "null,\n");
+                jsonData = jsonData.replace(/},/g, "},\n");
+                jsonData = jsonData.replace(/\]$/, "\n]");
+            }  
+            fs.writeFileSync(flagsFilePath, jsonData, "utf8");
+            console.log("Flags.json が保存されました。");
+        } catch (error) {
+            console.error("Flags.json の保存に失敗しました:", error);
+        }
+    };    
+
+    StorageManager.createFlagGroupsJson = function() {
+
+        if (fs.existsSync(flagGroupsFilePath)) {
+            console.log("FlagGroups.json はすでに存在します。");
+            return;
+        }
+
+        try {
+            const formatLevel = $dataSystem?.editor?.jsonFormatLevel ?? 1;
+            const space = formatLevel === 2 ? 4 : null;
+            let jsonData = JSON.stringify(defaultFlagGroups, null, space);
+            if (formatLevel === 1) {
+                jsonData = jsonData.replace(/^\[/, "[\n");
+                jsonData = jsonData.replace(/null,/, "null,\n");
+                jsonData = jsonData.replace(/},/g, "},\n");
+                jsonData = jsonData.replace(/\]$/, "\n]");
+            }
+            fs.writeFileSync(flagGroupsFilePath, jsonData, "utf8");
+            console.log("FlagGroups.json が保存されました。");
+        } catch (error) {
+            console.error("FlagGroups.json の保存に失敗しました:", error);
+        }
+    };
+
+    StorageManager.saveFlagGroupsJson = function() {
+        try {
+            const formatLevel = $dataSystem?.editor?.jsonFormatLevel ?? 1;
+            const space = formatLevel === 2 ? 4 : null;
+            let jsonData = JSON.stringify($gameFlags._flagGroups, null, space);
+            if (formatLevel === 1) {
+                jsonData = jsonData.replace(/^\[/, "[\n");
+                jsonData = jsonData.replace(/null,/, "null,\n");
+                jsonData = jsonData.replace(/},/g, "},\n");
+                jsonData = jsonData.replace(/\]$/, "\n]");
+            }            
+            fs.writeFileSync(flagGroupsFilePath, jsonData, "utf8");
+            console.log("FlagGroups.json が保存されました。");
+        } catch (error) {
+            console.error("FlagGroups.json の保存に失敗しました:", error);
+        }
+    };
+
+    StorageManager.loadFlagsJson = function() {
+
+        if (!fs.existsSync(flagsFilePath)) {
+            console.error("Flags.json が見つかりません。");
+            return null;
+        }
+
+        try {
+            const jsonData = fs.readFileSync(flagsFilePath, "utf8");
+            return JSON.parse(jsonData);
+        } catch (error) {
+            console.error("Flags.json の読み込みに失敗しました:", error);
+            return null;
+        }
+    };
+
+    StorageManager.loadFlagGroupsJson = function() {
+
+        if (!fs.existsSync(flagGroupsFilePath)) {
+            console.error("FlagGroups.json が見つかりません。");
+            return null;
+        }
+
+        try {
+            const jsonData = fs.readFileSync(flagGroupsFilePath, "utf8");
+            return JSON.parse(jsonData);
+        } catch (error) {
+            console.error("FlagGroups.json の読み込みに失敗しました:", error);
+            return null;
+        }
+    };
+
+    StorageManager.createBackup = function() {
+        try {
+            if (!StorageManager.exists(backupFolderPath)) {
+                StorageManager.createFolder(backupFolderPath);
+            }
+    
+            const timestamp = Date.now();
+            const backupPath = `${backupFolderPath}/${timestamp}Flags_.json`;
+
+            const originalData = fs.readFileSync(flagsFilePath, "utf8");
+            fs.writeFileSync(backupPath, originalData, "utf8");
+    
+            console.log(`バックアップ作成: ${backupPath}`);
+        } catch (error) {
+            console.error("バックアップ作成に失敗:", error);
+        }
+    };
+
+    StorageManager.createFolder = function() {
+        if (!fs.existsSync(backupFolderPath)) {
+            fs.mkdirSync(backupFolderPath, { recursive: true });
+        }
+    };
+
+    StorageManager.outputErrorLog = function(errors) {
+        try {
+            if (errors.length === 0) return;
+    
+            const errorLogDir = `${backupFolderPath}/`;
+            if (!fs.existsSync(errorLogDir)) {
+                fs.mkdirSync(errorLogDir, { recursive: true });
+            }
+    
+            const timestamp = Date.now();
+            const errorLogFile = `${errorLogDir}ErrorLog_${timestamp}.txt`;
+    
+            const logData = errors.join("\n");
+            fs.writeFileSync(errorLogFile, logData, "utf8");
+    
+            console.log(`エラーログ出力: ${errorLogFile}`);
+        } catch (error) {
+            console.error("エラーログの出力に失敗:", error);
+        }
+    };   
+
+//=============================================================================
+// Game_Flags
+//=============================================================================
+
+    class Game_Flags {
+        constructor() {
+            this._flags = [];
+            this._flagGroups = [];
+        } 
+    }
+
+//=============================================================================
+// Scene_Boot
+//=============================================================================
+
+    const _Scene_Boot_onDatabaseLoaded = Scene_Boot.prototype.onDatabaseLoaded;
+    Scene_Boot.prototype.onDatabaseLoaded = function () {
+        _Scene_Boot_onDatabaseLoaded.call(this);
+
+        StorageManager.createFlagsJson();
+        StorageManager.createFlagGroupsJson();
+        $gameFlags = StorageManager.loadFlagsJson() || new Game_Flags();
+        $gameFlags._flagGroups = StorageManager.loadFlagGroupsJson() || [];
+    };
+
+})();
