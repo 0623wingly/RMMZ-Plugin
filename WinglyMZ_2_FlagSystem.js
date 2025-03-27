@@ -11,7 +11,7 @@
 // 
 //=============================================================================*/
 /*:
- * @plugindesc 【wingly-Icoration】 [Tire 2] [Ver,0.0.0] [FlagSystem] 
+ * @plugindesc 【wingly-Icoration】 [Tire 2] [Ver,0.0.0a] [FlagSystem] 
  * @author ﾜｲ式会社wingly Chat-GPT
  * @target MZ
  * @url https://raw.githubusercontent.com/0623wingly/RMMZ-Plugin/refs/heads/Tire2/WinglyMZ_2_FlagSystem.js
@@ -207,43 +207,10 @@
  * "outputFlaginfo"
  * ----------------------------------------------------------------------------
  * テストプレイ時に、フラグ情報を出力するかどうかを設定します。
- * trueの場合、
- * セーブデータロード後に、
+ * trueの場合、セーブデータロード後に、
  * そのセーブデータのフラグ情報がデバッグコンソールに出力されます。
  * それぞれのフラグのプロパティが、
  * 現在どうなっているのかを確認したい場合に使用してください。
- * デフォルトはtrueです。
- * 
- * ----------------------------------------------------------------------------
- * "makebackup"
- * ----------------------------------------------------------------------------
- * テストプレイ実行時、様々な場面で、
- * Flags.jsonの中身は変更される可能性があります。そのため、
- * デフォルトではFlags.jsonの置き換え前にバックアップを出力するように
- * 設定されています。(出力先: data/backup)
- * もし、このバックアップを出力したくない場合は、falseに設定してください。
- * 
- * ----------------------------------------------------------------------------
- * "makebackupEverytime"
- * ----------------------------------------------------------------------------
- * デフォルトでは、エラーが発生していない、
- * つまり、Flags.jsonの中身に変更がない場合、
- * バックアップは出力されないように設定されています。
- * もし、エラーが発生していなくても、
- * 常に必ずバックアップを出力するようにしたい場合は、
- * trueに設定してください。
- * デフォルトはfalseです。
- * ちなみに、こちらは常にバックアップを出力するかどうかの設定であるため、
- * そもそもバックアップを出力しない設定になっている場合は無効です。
- * 
- * ----------------------------------------------------------------------------
- * "outputErrorlog"
- * ----------------------------------------------------------------------------
- * バックアップを出力する際、エラーログも出力するかどうかを設定します。
- * エラーログは、デベロッパーツールのコンソールに出力されるものと同等です。
- * バックアップと同じくdata/backupにテキストファイルとして出力されます。
- * trueの場合、バックアップ時にエラーログも出力されます。
- * バックアップを出力しない設定になっている場合は無効です。
  * デフォルトはtrueです。
  * 
  * ============================================================================
@@ -341,6 +308,7 @@
  * [Version History]～更新履歴～（開発中）
  * ############################################################################
  * 0.0.0  // JSONファイルの読み込み、書き込み機能を実装
+ * 0.0.0a // プラグインパラメーターの削除　その他細かな調整
  * ----------------------------------------------------------------------------
  * 
  * @param outputFlaginfo
@@ -351,25 +319,6 @@
  * 
  * @ --------------------------------------------------------------------------
  * 
- * @param makebackup
- * @text バックアップ出力
- * @desc trueの場合Flags.json置き換え前にバックアップを出力します。<br>テストプレイ時のみ有効です。
- * @default true
- * @type boolean
- * 
- * @param makebackupEverytime
- * @text 必ずバックアップ出力
- * @desc trueの場合エラーがなくても必ずバックアップが作成されます。<br>テストプレイ時のみ有効です。
- * @parent makebackup
- * @default false
- * @type boolean
- * 
- * @param outputErrorlog
- * @text エラーログ出力
- * @desc trueの場合バックアップ時にエラーログも出力されます。<br>テストプレイ時のみ有効です。
- * @parent makebackup
- * @default true
- * @type boolean
  * 
  *  
  */
@@ -382,27 +331,16 @@ $gameFlags = null;
     const pluginName = 'WinglyMZ_2_FlagSystem';
     const parameters = PluginManager.parameters(pluginName);
 
-    const PARAMS = {
-        outputFlaginfo: parameters["outputFlaginfo"] === "true",
-        makeBackup: parameters["makebackup"] === "true",
-        makeBackupEverytime: parameters["makebackupEverytime"] === "true",
-        outputErrorlog: parameters["outputErrorlog"] === "true",
-    };
+    let outputFlaginfo = parameters["outputFlaginfo"] === "true";
 
     const fs = require("fs");
     const path = require("path");
     const flagsFilePath = path.join("data", "Flags.json");
     const flagGroupsFilePath = path.join("data", "FlagGroups.json");
-    const backupFolderPath = path.join("data", "backup");
 
-    const defaultFlags = [
-null,
-{"id":0,"type":0,"name":"TestFlag","condition":"False","value":false,"priority":0,"relation":0}
-];
+    const defaultFlags = [null];
 
-    const defaultFlagGroups = [
-        null,
-        ];
+    const defaultFlagGroups = [null];
 
 //=============================================================================
 // DataManager
@@ -547,52 +485,7 @@ null,
             console.error("FlagGroups.json の読み込みに失敗しました:", error);
             return null;
         }
-    };
-
-    StorageManager.createBackup = function() {
-        try {
-            if (!StorageManager.exists(backupFolderPath)) {
-                StorageManager.createFolder(backupFolderPath);
-            }
-    
-            const timestamp = Date.now();
-            const backupPath = `${backupFolderPath}/${timestamp}Flags_.json`;
-
-            const originalData = fs.readFileSync(flagsFilePath, "utf8");
-            fs.writeFileSync(backupPath, originalData, "utf8");
-    
-            console.log(`バックアップ作成: ${backupPath}`);
-        } catch (error) {
-            console.error("バックアップ作成に失敗:", error);
-        }
-    };
-
-    StorageManager.createFolder = function() {
-        if (!fs.existsSync(backupFolderPath)) {
-            fs.mkdirSync(backupFolderPath, { recursive: true });
-        }
-    };
-
-    StorageManager.outputErrorLog = function(errors) {
-        try {
-            if (errors.length === 0) return;
-    
-            const errorLogDir = `${backupFolderPath}/`;
-            if (!fs.existsSync(errorLogDir)) {
-                fs.mkdirSync(errorLogDir, { recursive: true });
-            }
-    
-            const timestamp = Date.now();
-            const errorLogFile = `${errorLogDir}ErrorLog_${timestamp}.txt`;
-    
-            const logData = errors.join("\n");
-            fs.writeFileSync(errorLogFile, logData, "utf8");
-    
-            console.log(`エラーログ出力: ${errorLogFile}`);
-        } catch (error) {
-            console.error("エラーログの出力に失敗:", error);
-        }
-    };   
+    };  
 
 //=============================================================================
 // Game_Flags
@@ -602,7 +495,8 @@ null,
         constructor() {
             this._flags = [];
             this._flagGroups = [];
-        } 
+        }
+
     }
 
 //=============================================================================
@@ -613,10 +507,23 @@ null,
     Scene_Boot.prototype.onDatabaseLoaded = function () {
         _Scene_Boot_onDatabaseLoaded.call(this);
 
-        StorageManager.createFlagsJson();
-        StorageManager.createFlagGroupsJson();
+        if (fs.existsSync(flagsFilePath)) {
+            console.log("Flags.json はすでに存在します。");
+            return;
+        } else {
+            StorageManager.createFlagsJson();
+        }
+
+        if (fs.existsSync(flagGroupsFilePath)) {
+            console.log("FlagGroups.json はすでに存在します。");
+            return;
+        } else {
+            StorageManager.createFlagGroupsJson();
+        }        
+
         $gameFlags = StorageManager.loadFlagsJson() || new Game_Flags();
         $gameFlags._flagGroups = StorageManager.loadFlagGroupsJson() || [];
+
     };
 
 })();
