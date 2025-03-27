@@ -1,5 +1,5 @@
 //=============================================================================
-// FlagSystem.js
+// FlagSystem.js フラグシステム追加プラグイン
 //----------------------------------------------------------------------------
 // © 2025 wingly-Icoration. All Right Reserved.
 // This software is released under the MIT License.
@@ -11,9 +11,10 @@
 // 
 //=============================================================================*/
 /*:
- * @plugindesc 【wingly-Icoration】 [Tire 2] [Ver,0.0.0a] [FlagSystem] 
+ * @plugindesc 【wingly-Icoration】 [Tire 2] [Ver,0.0.1] [FlagSystem] 
  * @author ﾜｲ式会社wingly Chat-GPT
  * @target MZ
+ * @base PluginCommonBase
  * @url https://raw.githubusercontent.com/0623wingly/RMMZ-Plugin/refs/heads/Tire2/WinglyMZ_2_FlagSystem.js
  *
  * @help
@@ -286,6 +287,148 @@
  * 計算を行う、`calcFunccommand`,
  * コマンドの実行を行う、`execFunccommand`があります。 
  * 
+ * ============================================================================
+ *◎フラグの取得 `debugcommand`
+ * ============================================================================
+ * "infoFlag" ("info")
+ * ----------------------------------------------------------------------------
+ * これは、フラグの情報を取得するためのフラグコマンドです。
+ * 取得される情報とは、現在のフラグの各プロパティの値です。
+ * プラグインコマンド、スクリプト、グローバル関数、どれでも使用可能です。
+ * スクリプトでは、"info"と省略された名称となっています。
+ * 引数には、フラグの名称を記述してください。
+ * これは文字列である必要があるため、""で囲ってください。
+ * プラグインコマンドでの指定の場合は、不要です。
+ * 引数が文字列でない場合、その名前のフラグが存在しない場合は
+ * エラーとなります。エラーとなった場合は、このコマンドは無効となり、
+ * フラグの情報を取得せず処理をスキップします。
+ * また、エラーがログに出力されます。
+ * 引数の指定がない場合は、
+ * 現在存在する全てのフラグの情報を取得します。
+ * []で囲んで配列とすることで、複数指定することも可能です。
+ * 取得されたフラグの情報は、デバッグコンソールに出力されます。
+ * そのため、便宜上テストプレイ時のみ使用することをお勧めします。
+ * 
+ * プラグインコマンド: infoFlag
+ * スクリプト: $gameFlags.info("name"); //引数省略可
+ * グローバル関数: infoFlag("name"); //引数省略可
+ * 複数指定例;) $gameFlags.info(["name1","name2","name3"]);
+ * 
+ * ----------------------------------------------------------------------------
+ * "infoFlagモディファイア"
+ * ----------------------------------------------------------------------------
+ * 
+ * ----------------------------------------------------------------------------
+ * "haveFlag" ("have")
+ * ----------------------------------------------------------------------------
+ * これは、指定のフラグが子フラグを持っているかどうかを
+ * 取得するためのフラグコマンドです。
+ * プラグインコマンド、スクリプト、グローバル関数、どれでも使用可能です。
+ * スクリプトでは、"have"と省略された名称となっています。
+ * 引数には、親フラグの名称を記述してください。
+ * これは文字列である必要があるため、""で囲ってください。
+ * プラグインコマンドでの指定の場合は、不要です。
+ * 指定がない、または無効な値が指定された場合、
+ * エラーとなります。エラーとなった場合は、
+ * このコマンドは無効となり、フラグの数を取得せず処理をスキップします。
+ * また、エラーがログに出力されます。
+ * その親フラグが子フラグを持っている場合は、
+ * その親が持つすべての子フラグの名称が配列で返されます。
+ * その親フラグが子フラグを持っていない場合は、
+ * nullが返されます。
+ * 取得されたフラグの情報は、デバッグコンソールに出力されます。
+ * そのため、便宜上テストプレイ時のみ使用することをお勧めします。
+ * 
+ * プラグインコマンド: haveFlag
+ * スクリプト: $gameFlags.have("nameP"); //親フラグの名称
+ * グローバル関数: haveFlag("nameP"); //親フラグの名称
+ * 
+ * ----------------------------------------------------------------------------
+ * "countFlag" ("count")
+ * ----------------------------------------------------------------------------
+ * これは、指定のフラグの数を取得するためのフラグコマンドです。
+ * 条件に合うフラグの数が返されます。
+ * プラグインコマンド、スクリプト、グローバル関数、どれでも使用可能です。
+ * スクリプトでは、"count"と省略された名称となっています。
+ * 第一引数には、数えたいフラグのプロパティを指定してください。
+ * 利用できるのは、"type","condition","value","priority","relation"です。
+ * これは文字列である必要があるため、""で囲ってください。
+ * プラグインコマンドでの指定の場合は、不要です。
+ * 第二引数には、そのプロパティの検索したい値を指定してください。
+ * 例:) countFlag("type",1); //グローバルフラグの数を取得
+ * 例:) countFlag("condition","True"); //Trueのフラグの数を取得
+ * "condition"では、以下3つの特別な値での指定が行えます。
+ * "Positive": 正のフラグの数を取得します。
+ * "Negative": 負のフラグの数を取得します。
+ * "Complete": 完全なフラグの数を取得します。 
+ * 指定がない、または無効な値が指定された場合、
+ * エラーとなります。エラーとなった場合は、
+ * このコマンドは無効となり、フラグの数を取得せず処理をスキップします。
+ * また、エラーがログに出力されます。
+ * 複数の条件を指定したい場合は、`funccommand`を使用してください。
+ * 
+ * 
+ * プラグインコマンド: countFlag
+ * スクリプト: $gameFlags.count("conditions","value");
+ * グローバル関数: countFlag("conditions","value");
+ * 
+ * ============================================================================
+ *◎フラグの制定 `setcommand`
+ * ============================================================================
+ * "setFlag" ("set")
+ * ----------------------------------------------------------------------------
+ * これは、ローカルフラグを制定するためのフラグコマンドです。
+ * プラグインコマンド、スクリプト、グローバル関数、どれでも使用可能です。
+ * スクリプトでは、"set"と省略された名称となっています。
+ * 第一引数には、フラグの名称を記述してください。
+ * これは文字列である必要があるため、""で囲ってください。
+ * プラグインコマンドでの指定の場合は、不要です。
+ * いずれの場合でも指定が必須です。
+ * 引数が存在しない場合、第一引数が文字列でない場合、
+ * すでにその名前のフラグが存在する場合はエラーとなります。
+ * エラーとなった場合は、このコマンドは無効となり、
+ * フラグの制定を行わず処理をスキップします。
+ * また、エラーがログに出力されます。
+ * 第二引数には、フラグの状態,第三引数には、フラグの値,
+ * 第四引数には、フラグの優先度を指定してください。
+ * 第二引数に"Lock","Broken"を指定することはできません。
+ * 指定がない、または無効な値が指定された場合、
+ * デフォルトの値が代入されます。
+ * 
+ * プラグインコマンド: setFlag
+ * スクリプト: $gameFlags.set("name","condition",value,priority);
+ * グローバル関数: setFlag("name","condition",value,priority);
+ * 
+ * ----------------------------------------------------------------------------
+ * "setFlagGlobal"　("setG")
+ * ----------------------------------------------------------------------------
+ * これは、グローバルフラグを制定するためのフラグコマンドです。
+ * スクリプトでは、"setG"と省略された名称となっています。
+ * 基本的な仕様は、"setFlag"と同様です。
+ * "setFlag"と異なり、プロパティ"type"に1が代入されます。
+ * 
+ * プラグインコマンド: setFlagGlobal
+ * スクリプト: $gameFlags.setG("name","condition",value,priority);
+ * グローバル関数: setFlagGlobal("name","condition",value,priority); 
+ * 
+ * ----------------------------------------------------------------------------
+ * "makeFlag" ("make")
+ * ----------------------------------------------------------------------------
+ * "id"以外の全てのプロパティを指定して、
+ * フラグを制定することができるフラグコマンドです。
+ * プラグインコマンド、スクリプト、グローバル関数、どれでも使用可能です。
+ * スクリプトでは、"make"と省略された名称となっています。
+ * こちらでは第二引数に"Lock","Broken"を指定することができます。
+ * ただし、存在するだけで何もできないフラグとなるので気をつけてください。
+ * こちらは、フラグの制定を行うための最も高度なコマンドです。
+ * そのため、基本的に推奨される使用方法ではありません。
+ * 
+ * プラグインコマンド: makeFlag
+ * スクリプト: $gameFlags.make("type","name","condition",value,priority,relation);
+ * グローバル関数: makeFlag("type","name","condition",value,priority,relation); 
+ * 
+ * 
+ * 
  * %&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&
  *                                  注意事項
  * &%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%&%
@@ -309,6 +452,7 @@
  * ############################################################################
  * 0.0.0  // JSONファイルの読み込み、書き込み機能を実装
  * 0.0.0a // プラグインパラメーターの削除　その他細かな調整
+ * 0.0.1 // フラグの制定機能の追加 グローバルフラグ保存機能の定義
  * ----------------------------------------------------------------------------
  * 
  * @param outputFlaginfo
@@ -316,6 +460,186 @@
  * @desc trueの場合、ゲーム開始後フラグ情報が出力されます。<br>テストプレイ時のみ有効です。
  * @default true
  * @type boolean
+ * 
+ * @ --------------------------------------------------------------------------
+ *
+ * @command Separator_`debugcommand`
+ * @text ========= `debugcommand` =========
+ * @desc フラグの情報の取得を行うフラグコマンド
+ *
+ * @ --------------------------------------------------------------------------
+ * 
+ * @command infoFlag
+ * @text フラグの情報取得
+ * @desc 指定のフラグの現在の情報をデバッグコンソールに返します。<br>そのフラグが既に存在する必要があります。
+ *
+ * @arg name
+ * @text 名称
+ * @desc 取得したいフラグの名称を記述してください。<br>空なら全てのフラグの情報が取得されます。
+ * @type string[]
+ * 
+ * @ --------------------------------------------------------------------------
+ * 
+ * @command haveFlag
+ * @text 子フラグの取得
+ * @desc 指定の親フラグの持つ子フラグの名称をデバッグコンソールに返します。そのフラグが既に存在する必要があります。
+ *
+ * @arg name
+ * @text 親フラグ名称
+ * @desc 子の情報を取得したい親フラグの名称を記述してください。<br>空なら全てのフラグの情報が取得されます。
+ * @type string  
+ * 
+ * @ --------------------------------------------------------------------------
+ * 
+ * @command countFlag
+ * @text 指定条件を満たすフラグの数取得
+ * @desc 指定の条件を満たすフラグの数をデバッグコンソールに返します。
+ * 
+ * @arg conditions
+ * @text 条件
+ * @desc 検索したいプロパティを指定してください。
+ * @type select
+ * @option フラグタイプ
+ * @value type
+ * @option 状態
+ * @value condition
+ * @option 値
+ * @value value
+ * @option 優先度
+ * @value priority
+ * @option 関連性
+ * @value relation
+ * 
+ * @arg value
+ * @text 値
+ * @desc 検索したい値を指定してください。<br>検索条件に合わせ、適切な値を指定してください。
+ * @type string
+ * 
+ * @ --------------------------------------------------------------------------
+ *
+ * @command Separator_`setcommand`
+ * @text ========= `setcommand` =========
+ * @desc フラグの制定を行うフラグコマンド
+ *
+ * @ --------------------------------------------------------------------------
+ * 
+ * @command setFlag
+ * @text ローカルフラグの制定
+ * @desc ローカルフラグの制定を行います。<br>各種プロパティも含め制定してください。
+ *
+ * @arg name
+ * @text 名称
+ * @desc 制作するローカルフラグの名称を記述してください。<br>名称は文字列として厳格に判別されます。
+ * @type string 
+ *
+ * @arg condition
+ * @text 状態
+ * @desc 制定するローカルフラグの状態を選択してください。<br>Lock/Brokenの指定はできません。  
+ * @default False
+ * @type select
+ * @option True
+ * @option False
+ *
+ * @arg value
+ * @text 値
+ * @desc 制定するローカルフラグの値を選択してください。<br>デフォルトはfalseです。
+ * @default false
+ * @type boolean
+ *
+ * @arg priority
+ * @text 優先度
+ * @desc 制定するローカルフラグの優先度を指定してください。<br>デフォルトは０です。上限はありません。
+ * @default 0
+ * @type number
+ * @min 0
+ * 
+ * @ --------------------------------------------------------------------------
+ * 
+ * @command setFlagGlobal
+ * @text グローバルフラグの制定
+ * @desc グローバルフラグの制定を行います。<br>グローバルフラグの情報は全セーブデータ間で共有されます。
+ *
+ * @arg name
+ * @text 名称
+ * @desc 制作するグローバルフラグの名称を記述してください。<br>名称は文字列として厳格に判別されます。
+ * @type string 
+ *
+ * @arg condition
+ * @text 状態
+ * @desc 制定するグローバルフラグの状態を選択してください。<br>Lock/Brokenの指定はできません。  
+ * @default False
+ * @type select
+ * @option True
+ * @option False
+ *
+ * @arg value
+ * @text 値
+ * @desc 制定するグローバルフラグの値を選択してください。<br>デフォルトはfalseです。
+ * @default false
+ * @type boolean
+ *
+ * @arg priority
+ * @text 優先度
+ * @desc 制定するグローバルフラグの優先度を指定してください。<br>デフォルトは０です。上限はありません。
+ * @default 0
+ * @type number
+ * @min 0
+ * 
+ * @ --------------------------------------------------------------------------
+ * 
+ * @command makeFlag
+ * @text ※非推奨※フラグの制定
+ * @desc ※非推奨※フラグの制定を行います。<br>各種プロパティも含め制定してください。
+ *
+ * @arg type
+ * @text タイプ
+ * @desc 制作するフラグのタイプを選択してください。
+ * @default 0
+ * @type select
+ * @option ローカル
+ * @value 0
+ * @option グローバル
+ * @value 1
+ * 
+ * @arg name
+ * @text 名称
+ * @desc 制作するフラグの名称を記述してください。<br>名称は文字列として厳格に判別されます。
+ * @type string 
+ *
+ * @arg condition
+ * @text 状態
+ * @desc 制定するフラグの状態を選択してください。<br>Lock/Brokenの指定は推奨できません。  
+ * @default False
+ * @type select
+ * @option True
+ * @option False
+ * @option Lock
+ * @option Broken
+ *
+ * @arg value
+ * @text 値
+ * @desc 制定するフラグの値を選択してください。<br>デフォルトはfalseです。
+ * @default false
+ * @type boolean
+ *
+ * @arg priority
+ * @text 優先度
+ * @desc 制定するラグの優先度を指定してください。<br>デフォルトは0です。上限はありません。
+ * @default 0
+ * @type number
+ * @min 0
+ * 
+ * @arg relation
+ * @text 関連性
+ * @desc 制定するフラグの関連性の有無を選択してください。<br>0以外は非推奨です。
+ * @default 0
+ * @type select
+ * @option 関連性なし
+ * @value 0
+ * @option 関連性あり
+ * @value 1
+ * @option 関連性あり(BAN)
+ * @value -1
  * 
  * @ --------------------------------------------------------------------------
  * 
@@ -399,7 +723,9 @@ $gameFlags = null;
         try {
             const formatLevel = $dataSystem?.editor?.jsonFormatLevel ?? 1;
             const space = formatLevel === 2 ? 4 : null;
-            let jsonData = JSON.stringify($gameFlags, null, space);
+            const flagsArray = $gameFlags._flags ? $gameFlags._flags.slice() : [];
+            flagsArray.unshift(null);
+            let jsonData = JSON.stringify(flagsArray, null, space);
             if (formatLevel === 1) {
                 jsonData = jsonData.replace(/^\[/, "[\n");
                 jsonData = jsonData.replace(/null,/, "null,\n");
@@ -441,6 +767,8 @@ $gameFlags = null;
         try {
             const formatLevel = $dataSystem?.editor?.jsonFormatLevel ?? 1;
             const space = formatLevel === 2 ? 4 : null;
+            const flagsArray = $gameFlags._lagGroups ? $gameFlags._lagGroups.slice() : [];
+            flagsArray.unshift(null);
             let jsonData = JSON.stringify($gameFlags._flagGroups, null, space);
             if (formatLevel === 1) {
                 jsonData = jsonData.replace(/^\[/, "[\n");
@@ -485,7 +813,18 @@ $gameFlags = null;
             console.error("FlagGroups.json の読み込みに失敗しました:", error);
             return null;
         }
-    };  
+    };
+
+    StorageManager.saveGlobalFlags = function(flags) {
+        const json = JsonEx.stringify(flags);
+        return this.saveToLocalFile("GlobalFlags.rmmzsave", json);
+    };
+    
+    StorageManager.loadGlobalFlags = function() {
+        const json = this.loadFromLocalFile("GlobalFlags.rmmzsave");
+        return json ? JsonEx.parse(json) : null;
+    };
+    
 
 //=============================================================================
 // Game_Flags
@@ -496,6 +835,162 @@ $gameFlags = null;
             this._flags = [];
             this._flagGroups = [];
         }
+
+        isNameExist(name) {
+            if (!name || typeof name !== "string") return false;
+            return $gameFlags._flags.some(flag => flag?.name === name);
+        };
+
+        nextId() {
+            const validIds = this._flags
+                .filter(f => f !== null && typeof f?.id === "number")
+                .map(f => f.id);
+        
+            const maxId = validIds.length > 0 ? Math.max(...validIds) : -1;
+            return maxId + 1;
+        }        
+
+        validateFlagArguments(name, condition, value, priority) {
+            const result = {
+                id: this.nextId(),
+                type: 0,
+                name: "",
+                condition: "False",
+                value: false,
+                priority: 0
+            };
+
+            if (typeof name !== "string" || !name.trim()) {
+                console.error("[FlagSystem] name が無効です。文字列で指定してください。");
+                return false;
+            }
+            if (this.isNameExist(name)) {
+                console.error(`[FlagSystem] フラグ名「${name}」はすでに使用されています。`);
+                return false;
+            }
+            result.name = name;
+
+            const validConditions = ["True", "False", "Lock", "Broken"];
+            if (typeof condition === "string" && validConditions.includes(condition)) {
+                result.condition = condition;
+            } else if (typeof condition === "number") {
+                const conditionMap = {
+                    10: "True",
+                    20: "False",
+                    30: "Lock",
+                    40: "Broken"
+                };
+                result.condition = conditionMap[condition] || "False";
+            } else {
+                console.warn(`[FlagSystem] condition「${condition}」が無効なため "False" に修正しました。`);
+            }
+        
+            if (typeof value === "boolean") {
+                result.value = value;
+            } else if (value === 1) {
+                result.value = true;
+            } else if  (value === 2) {
+                result.value = false;
+            } else {
+                console.warn(`[FlagSystem] value「${value}」が無効なため false に修正しました。`);
+            }
+        
+            if (Number.isInteger(priority) && priority >= 0) {
+                result.priority = priority;
+            } else {
+                console.warn(`[FlagSystem] priority「${priority}」が無効なため 0 に修正しました。`);
+            }
+        
+            return result;
+        };
+            
+    //----------------------------------------------------------------------------
+    // `debugcommand`
+    //----------------------------------------------------------------------------
+        
+    /**
+     * @param {string} name
+     * @returns {Object}
+     */
+        info(name) {
+            const flag = this._flags.find(flag => flag.name === name);
+            if (flag) {
+                console.log(flag);
+            } else {
+                console.error(`フラグ ${name} は存在しません。`);
+            }
+        }
+
+    //----------------------------------------------------------------------------
+    // `setcommand`
+    //----------------------------------------------------------------------------
+    
+    /**
+     * ローカルフラグを制定する
+     * @param {string} name - フラグ名（ユニークであること）
+     * @param {string} condition - 状態（"True", "False", "Lock", "Broken"）
+     * @param {boolean} value - 値（true / false）
+     * @param {number} priority - 優先度（0以上の整数）
+     * @returns {void}
+     */
+    
+        set(name, condition, value, priority) {
+            const validated = this.validateFlagArguments(name, condition, value, priority);
+            if (!validated) {
+                console.error(`[FlagSystem] フラグ「${name}」の制定に失敗しました。`);
+                return;
+            }
+
+            this._flags.push(validated);
+            if (Utils.isOptionValid("test")) {
+                StorageManager.saveFlagsJson(this._flags);
+            }
+            console.log(`[FlagSystem] フラグ「${validated.name}」を制定しました。`);
+        }
+
+    /**
+     * グローバルフラグを制定する
+     * @param {string} name - フラグ名（ユニークであること）
+     * @param {string} condition - 状態（"True", "False", "Lock", "Broken"）
+     * @param {boolean} value - 値（true / false）
+     * @param {number} priority - 優先度（0以上の整数）
+     * @returns {void}
+     */
+        setG(name, condition, value, priority) {
+            const validated = this.validateFlagArguments(name, condition, value, priority);
+            if (!validated) {
+                console.error(`[FlagSystem] グローバルフラグ「${name}」の制定に失敗しました。`);
+                return;
+            }
+        
+            validated.type = 1;
+            this._flags.push(validated);
+            if (Utils.isOptionValid("test")) {
+                StorageManager.saveFlagsJson(this._flags);
+            }
+            console.log(`[FlagSystem] グローバルフラグ「${validated.name}」を制定しました。`);
+        };
+
+    /**
+     * フラグを強制的に制定する
+     * @param {string} name - フラグ名（ユニークであること）
+     * @param {string} condition - 状態（"True", "False", "Lock", "Broken"）
+     * @param {boolean} value - 値（true / false）
+     * @param {number} priority - 優先度（0以上の整数）
+     * @returns {void}
+     */
+
+        make(type, name, condition, value, priority, relation) {
+            if (this.isNameExist(name)) {
+                console.error(`フラグ ${name} は既に存在します。`);
+                return;
+            }
+            const id = this.nextId() -1;
+            this._flags.push({id, type, name, condition, value, priority, relation});
+            StorageManager.saveFlagsJson();
+        };
+
+
 
     }
 
@@ -509,14 +1004,12 @@ $gameFlags = null;
 
         if (fs.existsSync(flagsFilePath)) {
             console.log("Flags.json はすでに存在します。");
-            return;
         } else {
             StorageManager.createFlagsJson();
         }
 
         if (fs.existsSync(flagGroupsFilePath)) {
             console.log("FlagGroups.json はすでに存在します。");
-            return;
         } else {
             StorageManager.createFlagGroupsJson();
         }        
@@ -526,4 +1019,86 @@ $gameFlags = null;
 
     };
 
+//=============================================================================
+// PluginManager
+//=============================================================================
+
+// `debugcommand`
+
+    PluginManager.registerCommand(pluginName, "infoFlag", args => {
+        const name = args.name;
+        $gameFlags.info(name);
+    });
+
+    PluginManager.registerCommand(pluginName, "haveFlag", args => {
+        const name = args.name;
+        $gameFlags.have(name);
+    });
+
+    PluginManager.registerCommand(pluginName, "countFlag", args => {
+        const conditions = args.conditions;
+        const value = args.value;
+        $gameFlags.count(conditions, value);
+    });
+    
+// `setcommand`
+
+    PluginManagerEx.registerCommand(document.currentScript, "setFlag", args => {
+        const name = args.name;
+        const condition = args.condition;
+        const value = args.value;
+        const priority = args.priority;
+        $gameFlags.set(name, condition, value, priority);
+    });
+
+    PluginManagerEx.registerCommand(document.currentScript, "setFlagGlobal", args => {
+        const name = args.name;
+        const condition = args.condition;
+        const value = args.value;
+        const priority = args.priority;
+        $gameFlags.setG(name, condition, value, priority);
+    });
+
+    PluginManagerEx.registerCommand(document.currentScript, "makeFlag", args => {
+        const type = args.type;
+        const name = args.name;
+        const condition = args.condition;
+        const value = args.value;
+        const priority = args.priority;
+        const relation = args.relation;
+        $gameFlags.make(type, name, condition, value, priority, relation);
+    });
+
 })();
+
+// ============================================================================
+// グローバル関数の追加
+// ============================================================================
+
+// `debugcommand`
+
+    window.infoFlag = function(...args) {
+        return $gameFlags.info(...args);
+    };
+
+    window.haveFlag = function(...args) {
+        return $gameFlags.have(...args);
+    };
+
+    window.countFlag = function(...args) {
+        return $gameFlags.count(...args);
+    }
+
+// `setcommand`
+
+    window.setFlag = function(...args) {
+        return $gameFlags.set(...args);
+    };
+
+    window.setFlagGlobal = function(...args) {
+        return $gameFlags.setG(...args);
+    };
+
+    window.makeFlag = function(...args) {
+        return $gameFlags.make(...args);
+    };
